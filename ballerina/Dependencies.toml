@@ -86,6 +86,7 @@ dependencies = [
 	{org = "ballerina", name = "test"}
 ]
 modules = [
-	{org = "ballerinax", packageName = "solace", moduleName = "solace"}
+	{org = "ballerinax", packageName = "solace", moduleName = "solace"},
+	{org = "ballerinax", packageName = "solace", moduleName = "solace.smf"}
 ]
 
