@@ -70,6 +70,12 @@ dependencies {
     externalJars(group: 'com.solace', name: 'solace-serdes', version: "${solaceSerdesVersion}") {
         transitive = false
     }
+    /* Solace PubSub+ Messaging API for Java (SMF-native surface).
+       NOTE: its sol-jcsmp transitive is intentionally NOT shipped - the identical JCSMP classes
+       are already bundled inside sol-jms (same release train). */
+    externalJars(group: 'com.solace', name: 'solace-messaging-client', version: "${solaceMessagingClientVersion}") {
+        transitive = false
+    }
 
     /* Netty dependencies - required by sol-jms */
     externalJars(group: 'io.netty', name: 'netty-common', version: "${nettyVersion}") {
@@ -87,7 +93,15 @@ dependencies {
     externalJars(group: 'io.netty', name: 'netty-handler', version: "${nettyVersion}") {
         transitive = false
     }
-    externalJars(group: 'io.netty', name: 'netty-codec', version: "${nettyVersion}") {
+    /* In Netty 4.2 the former netty-codec artifact is an empty aggregator; the classes live in
+       netty-codec-base / netty-codec-compression / netty-codec-socks. */
+    externalJars(group: 'io.netty', name: 'netty-codec-base', version: "${nettyVersion}") {
+        transitive = false
+    }
+    externalJars(group: 'io.netty', name: 'netty-codec-compression', version: "${nettyVersion}") {
+        transitive = false
+    }
+    externalJars(group: 'io.netty', name: 'netty-codec-socks', version: "${nettyVersion}") {
         transitive = false
     }
     externalJars(group: 'io.netty', name: 'netty-codec-http', version: "${nettyVersion}") {
@@ -131,6 +145,7 @@ task updateTomlFiles {
         newBallerinaToml = newBallerinaToml.replace("@toml.version@", tomlVersion)
         newBallerinaToml = newBallerinaToml.replace('@javax.jms.version@', project.jmsApiVersion)
         newBallerinaToml = newBallerinaToml.replace("@sol.jms.version@", project.solaceJmsVersion)
+        newBallerinaToml = newBallerinaToml.replace('@solace.messaging.client.version@', project.solaceMessagingClientVersion)
         newBallerinaToml = newBallerinaToml.replace('@commons.logging.version@', project.commonsLoggingVersion)
         newBallerinaToml = newBallerinaToml.replace('@servicemix.jzlib.version@', project.servicemixJzlibVersion)
         newBallerinaToml = newBallerinaToml.replace('@osgi.annotation.version@', project.osgiAnnotationVersion)
@@ -208,9 +223,11 @@ clean {
 
 build.dependsOn copyToLib
 build.dependsOn ":${packageName}-native:build"
+build.dependsOn ":${packageName}-smf-native:build"
 build.dependsOn generatePomFileForMavenPublication
 
 test.dependsOn ":${packageName}-native:build"
+test.dependsOn ":${packageName}-smf-native:build"
 test.dependsOn startSolaceServer
 test.finalizedBy stopSolaceServer
 

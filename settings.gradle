@@ -46,10 +46,12 @@ rootProject.name = "module-ballerinax-${projectName}"
 
 include ":checkstyle"
 include ":${projectName}-native"
+include ":${projectName}-smf-native"
 include ":${projectName}-ballerina"
 
 project(':checkstyle').projectDir = file("build-config${File.separator}checkstyle")
 project(":${projectName}-native").projectDir = file('native')
+project(":${projectName}-smf-native").projectDir = file('smf-native')
 project(":${projectName}-ballerina").projectDir = file('ballerina')
 
 gradleEnterprise {
