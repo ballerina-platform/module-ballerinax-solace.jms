@@ -1,6 +1,6 @@
 services:
   solace:
-    image: 'solace/solace-pubsub-standard:latest'
+    image: 'solace/solace-pubsub-standard:10.25.24'
     container_name: solace-test-server
     ports:
       - '55554:55555'  # SMF - default messaging (55555 is Solace internal port, 55554 for Mac compatibility)

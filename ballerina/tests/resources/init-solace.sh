@@ -38,8 +38,27 @@ create_queue() {
 # Note: Queues are configured for guaranteed messaging (persistent delivery)
 # This enables support for transacted sessions which require guaranteed transport
 
+# Function to add a topic subscription to a queue (topic-to-queue mapping)
+add_queue_subscription() {
+    local queue_name=$1
+    local topic=$2
+    echo "Adding subscription '${topic}' to queue: $queue_name"
+
+    curl -X POST "${SEMP_URL}/msgVpns/${VPN}/queues/${queue_name}/subscriptions" \
+        -u "${AUTH}" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"subscriptionTopic\": \"${topic}\"
+        }" \
+        -s -o /dev/null -w "%{http_code}\n" || true
+}
+
 # Create queues
 create_queue "test-queue"
 create_queue "test-transacted-queue"
+
+# Queue + topic-to-queue mapping used by the SMF persistent publisher tests
+create_queue "smf-test-queue"
+add_queue_subscription "smf-test-queue" "smf/test/persistent"
 
 echo "Solace initialization completed!"
