@@ -192,11 +192,35 @@ task startSolaceServer() {
         if (!Os.isFamily(Os.FAMILY_WINDOWS)) {
             def dockerComposeFile = "${project.projectDir}/tests/resources/docker-compose.yaml"
             def initScript = "${project.projectDir}/tests/resources/init-solace.sh"
+            def dockerCheck = exec {
+                commandLine 'sh', '-c', 'docker info > /dev/null 2>&1'
+                ignoreExitValue true
+            }
+            if (dockerCheck.exitValue != 0) {
+                throw new GradleException("The Docker daemon is not available. The integration tests " +
+                        "require a Solace broker started via Docker Compose. Start Docker and retry, " +
+                        "or skip the tests with './gradlew build -x test'.")
+            }
             exec {
                 commandLine 'sh', '-c', "docker compose -f $dockerComposeFile up -d"
             }
-            sleep(20 * 1000)
-            // Initialize queues
+            // Wait until the broker's SEMP API is actually ready before provisioning, rather than
+            // sleeping a fixed interval. A blind sleep races broker startup on cold starts (image
+            // pull, slow host), so init-solace.sh runs against an unready broker, the queues are
+            // never created, and every queue-dependent test fails with "Queue Not Found".
+            def readinessCmd = "for i in \$(seq 1 60); do " +
+                    "if [ \"\$(curl -s -o /dev/null -w '%{http_code}' -u admin:admin " +
+                    "http://localhost:8080/SEMP/v2/config/about)\" = \"200\" ]; then exit 0; fi; " +
+                    "sleep 5; done; echo 'Solace SEMP API not ready after 300s' >&2; exit 1"
+            def readiness = exec {
+                commandLine 'sh', '-c', readinessCmd
+                ignoreExitValue true
+            }
+            if (readiness.exitValue != 0) {
+                throw new GradleException("The Solace broker did not become ready within the timeout. " +
+                        "Check the container logs with 'docker logs solace-test-server'.")
+            }
+            // Initialize queues (init-solace.sh fails loudly on provisioning errors)
             exec {
                 commandLine 'sh', '-c', "chmod +x $initScript && $initScript"
                 ignoreExitValue false

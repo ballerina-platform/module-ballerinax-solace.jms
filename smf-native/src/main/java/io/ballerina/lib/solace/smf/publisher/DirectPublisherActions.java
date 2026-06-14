@@ -50,8 +50,9 @@ public final class DirectPublisherActions {
      * @return {@code null} on success, or Ballerina {@code smf:Error} on failure
      */
     public static Object init(BObject publisher, BString url, BMap<BString, Object> config) {
+        MessagingService messagingService = null;
         try {
-            MessagingService messagingService = PublisherUtils.connect(url.getValue(), config);
+            messagingService = PublisherUtils.connect(url.getValue(), config);
             DirectMessagePublisherBuilder builder = messagingService.createDirectMessagePublisherBuilder();
             PublisherUtils.applyBackPressure(builder, config);
             DirectMessagePublisher directPublisher = builder.build().start();
@@ -59,6 +60,7 @@ public final class DirectPublisherActions {
             publisher.addNativeData(NATIVE_PUBLISHER, directPublisher);
             return null;
         } catch (Exception exception) {
+            CommonUtils.disconnectQuietly(messagingService);
             return CommonUtils.createError(
                     String.format("Error occurred while initializing the Solace direct message publisher: %s",
                             exception.getMessage()), exception);

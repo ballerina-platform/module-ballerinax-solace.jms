@@ -49,3 +49,19 @@ isolated function validatePublisherConfigurations(PublisherConfiguration config)
         return error Error("Back-pressure buffer capacity must be at least 1");
     }
 }
+
+isolated function validateDirectReceiverConfigurations(DirectReceiverConfiguration config) returns Error? {
+    check validateConfigurations(config);
+
+    if config.topicSubscriptions.length() == 0 {
+        return error Error("Direct receiver requires at least one topic subscription");
+    }
+}
+
+isolated function validatePersistentReceiverConfigurations(PersistentReceiverConfiguration config) returns Error? {
+    check validateConfigurations(config);
+
+    if config.autoAck && config.negativeSettlementEnabled {
+        return error Error("Automatic acknowledgement and negative settlement are mutually exclusive");
+    }
+}

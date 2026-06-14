@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/time;
 import ballerinax/solace;
 
 # SSL protocol version 3.0
@@ -102,6 +103,117 @@ public type PublisherConfiguration record {
     BackPressureConfig backPressure = {};
 };
 
+# Endpoint resources missing on the broker are not created; receiver start fails if they are absent
+public const DO_NOT_CREATE = "DO_NOT_CREATE";
+# Endpoint resources missing on the broker are created when the receiver starts
+public const CREATE_ON_START = "CREATE_ON_START";
+
+# Represents the strategies for provisioning missing broker resources (queues and endpoints).
+# This is the SMF counterpart of the JMS surface's `enableDynamicDurables` configuration.
+public type MissingResourcesStrategy DO_NOT_CREATE|CREATE_ON_START;
+
+# Represents the configuration for the Solace SMF direct message receiver.
+public type DirectReceiverConfiguration record {
+    *ConnectionConfiguration;
+    # The topic subscriptions to receive messages from. Topics support wildcard
+    # subscriptions and multi-level hierarchies using '/' as a delimiter
+    string[] topicSubscriptions;
+    # The share name for a shared subscription. When set, multiple receivers using the
+    # same share name receive messages from the matching topics in a load-balanced manner
+    string shareName?;
+};
+
+# Replays all messages retained in the replay log for the queue.
+public const ALL_MESSAGES = "ALL_MESSAGES";
+
+# Represents a replay strategy which replays messages logged on or after the given time.
+public type TimeBasedReplay record {|
+    # The time to start the replay from
+    time:Utc fromTime;
+|};
+
+# Represents a replay strategy which replays messages logged after the message with the
+# given replication group message id.
+public type ReplicationGroupIdReplay record {|
+    # The replication group message id after which messages are replayed.
+    # Obtain it from the `replicationGroupMessageId` field of a received message
+    string afterMessageId;
+|};
+
+# Represents the supported message replay strategies. Message replay requires a replay log
+# to be provisioned on the broker, and is not supported with partitioned queues or under replication.
+public type ReplayStrategy ALL_MESSAGES|TimeBasedReplay|ReplicationGroupIdReplay;
+
+# Represents the configuration for the Solace SMF persistent message receiver.
+public type PersistentReceiverConfiguration record {
+    *ConnectionConfiguration;
+    # The name of the durable queue to consume messages from
+    string queueName;
+    # The message replay strategy. When set, the broker redelivers eligible messages from
+    # the replay log to this receiver before live messages
+    ReplayStrategy replayStrategy?;
+    # Additional topic subscriptions to add to the queue (programmatic topic-to-queue mapping)
+    string[] topicSubscriptions = [];
+    # Only messages with properties matching the message selector expression are delivered.
+    # If this value is not set, all messages in the queue will be delivered
+    string messageSelector?;
+    # The strategy for provisioning the queue on the broker when it does not exist
+    MissingResourcesStrategy missingResourcesStrategy = DO_NOT_CREATE;
+    # When `true`, messages are automatically acknowledged by the underlying API after a successful
+    # receive. When `false` (default), messages must be explicitly acknowledged via `ack()`;
+    # unacknowledged messages are redelivered after the receiver flow reconnects
+    boolean autoAck = false;
+    # Enables the negative settlement outcomes `FAILED` and `REJECTED` on this receiver
+    # (requires Solace broker 10.2.1 or later). Mutually exclusive with `autoAck`
+    boolean negativeSettlementEnabled = false;
+};
+
+# Represents the SMF service configuration for a direct (at-most-once) topic subscription.
+public type DirectSubscriptionConfig record {|
+    # The topic subscriptions to receive messages from
+    string[] topicSubscriptions;
+    # The share name for a load-balanced shared subscription
+    string shareName?;
+|};
+
+# Represents the SMF service configuration for a persistent queue subscription.
+public type QueueSubscriptionConfig record {|
+    # The name of the durable queue to consume messages from
+    string queueName;
+    # Additional topic subscriptions to add to the queue (programmatic topic-to-queue mapping)
+    string[] topicSubscriptions = [];
+    # Only messages with properties matching the message selector expression are delivered
+    string messageSelector?;
+    # The strategy for provisioning the queue on the broker when it does not exist
+    MissingResourcesStrategy missingResourcesStrategy = DO_NOT_CREATE;
+    # When `true`, messages are acknowledged automatically after the `onMessage` handler returns
+    # successfully. When `false` (default), messages must be acknowledged via the `smf:Caller`
+    boolean autoAck = false;
+    # Enables the negative settlement outcomes `failed()` and `rejected()` on the `smf:Caller`
+    # (requires Solace broker 10.2.1 or later). Mutually exclusive with `autoAck`
+    boolean negativeSettlementEnabled = false;
+|};
+
+# Represents the configuration for the Solace SMF request-reply message replier.
+public type ReplierConfiguration record {
+    *ConnectionConfiguration;
+    # The topic subscription to receive request messages from
+    string topicSubscription;
+    # The share name for a load-balanced shared subscription
+    string shareName?;
+};
+
+# The service configuration type for the `smf:Service`.
+public type ServiceConfiguration DirectSubscriptionConfig|QueueSubscriptionConfig;
+
+# Annotation to configure the `smf:Service`.
+public annotation ServiceConfiguration ServiceConfig on service;
+
+# The Solace SMF service type.
+public type Service distinct service object {
+    // remote function onMessage(smf:Message message, smf:Caller caller) returns error?;
+};
+
 # Represent the message used to send and receive content from the Solace broker over SMF.
 public type Message record {|
     # Message payload
@@ -127,6 +239,18 @@ public type Message record {|
     int sequenceNumber?;
     # Application-provided sender identifier
     string senderId?;
+    # Indication of whether this message is being redelivered (Only set by the broker)
+    boolean redelivered?;
+    # The destination name this message was received from (Only set by the broker)
+    string destinationName?;
+    # The replication group message id usable for message replay (Only set by the broker)
+    string replicationGroupMessageId?;
+    # Message expiration time as a timestamp in milliseconds (Only set by the broker)
+    int expiration?;
+    # Time the message was received by the broker, in milliseconds (Only set by the broker)
+    int timestamp?;
+    # Time the message was sent by the publisher, in milliseconds (Only set by the broker)
+    int senderTimestamp?;
 |};
 
 // Internal representation for the Solace SMF message.

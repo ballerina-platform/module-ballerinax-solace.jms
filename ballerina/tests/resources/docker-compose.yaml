@@ -5,7 +5,8 @@ services:
     ports:
       - '55554:55555'  # SMF - default messaging (55555 is Solace internal port, 55554 for Mac compatibility)
       - '55003:55003'  # SMF - compressed messaging
-      - '8080:8080'    # Web transport
+      - '8008:8008'    # Web transport (WebSocket) - used by the broker UI "Try Me!" send/receive panel
+      - '8080:8080'    # SEMP / management UI
     environment:
       - username_admin_globalaccesslevel=admin
       - username_admin_password=admin

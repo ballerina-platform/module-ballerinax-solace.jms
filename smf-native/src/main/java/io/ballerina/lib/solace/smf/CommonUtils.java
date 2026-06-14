@@ -18,9 +18,17 @@
 
 package io.ballerina.lib.solace.smf;
 
+import com.solace.messaging.MessagingService;
+import com.solace.messaging.config.profile.ConfigurationProfile;
+import io.ballerina.lib.solace.smf.config.ConnectionPropertiesBuilder;
 import io.ballerina.runtime.api.creators.ErrorCreator;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BError;
+import io.ballerina.runtime.api.values.BMap;
+import io.ballerina.runtime.api.values.BString;
+
+import java.io.PrintStream;
+import java.util.Properties;
 
 /**
  * Common utility methods for the Solace SMF module.
@@ -28,8 +36,44 @@ import io.ballerina.runtime.api.values.BError;
 public final class CommonUtils {
 
     private static final String SOLACE_SMF_ERROR = "Error";
+    private static final PrintStream ERR_OUT = System.err;
 
     private CommonUtils() {}
+
+    /**
+     * Builds and connects a {@link MessagingService} from the broker URL and connection configuration.
+     *
+     * @param url    Solace broker URL
+     * @param config Ballerina connection configuration map
+     * @return the connected messaging service
+     */
+    public static MessagingService connect(String url, BMap<BString, Object> config) {
+        Properties props = ConnectionPropertiesBuilder.buildServiceProperties(url, config);
+        return MessagingService.builder(ConfigurationProfile.V1)
+                .fromProperties(props)
+                .build()
+                .connect();
+    }
+
+    /**
+     * Disconnects a {@link MessagingService}, ignoring any error. Used to release a connection that
+     * was established but could not be fully initialized (e.g. building or starting the
+     * publisher/receiver failed), so a failed initialization does not leak a broker connection.
+     *
+     * @param messagingService the messaging service to disconnect; a {@code null} is ignored
+     */
+    public static void disconnectQuietly(MessagingService messagingService) {
+        if (messagingService == null) {
+            return;
+        }
+        try {
+            messagingService.disconnect();
+        } catch (Exception exception) {
+            // Best-effort cleanup; the original initialization error is what the caller reports.
+            ERR_OUT.println("Failed to disconnect the messaging service during cleanup: "
+                    + exception.getMessage());
+        }
+    }
 
     /**
      * Creates a Ballerina error with given message.

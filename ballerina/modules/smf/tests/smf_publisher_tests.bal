@@ -1,4 +1,4 @@
-// Copyright (c) 2026 WSO2 LLC. (http://www.wso2.com).
+// Copyright (c) 2026, WSO2 LLC. (http://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -26,10 +26,38 @@ const string PERSISTENT_TEST_TOPIC = "smf/test/persistent";
 const string PERSISTENT_TEST_QUEUE = "smf-test-queue";
 const string DIRECT_TEST_TOPIC = "smf/test/direct";
 
+# Drains any leftover messages from a queue so a test starts from a clean state.
+isolated function drainQueue(string queueName) returns error? {
+    PersistentReceiver receiver = check new (BROKER_URL,
+        auth = {username: BROKER_USERNAME, password: BROKER_PASSWORD},
+        queueName = queueName
+    );
+    // Use a generous first timeout so an in-flight topic-to-queue delivery is not missed, leaving
+    // a straggler that would pollute the next test that asserts on exact message order.
+    do {
+        decimal timeout = 5.0;
+        while true {
+            Message? leftover = check receiver->receive(timeout);
+            if leftover is () {
+                break;
+            }
+            check receiver->ack(leftover);
+            timeout = 2.0;
+        }
+    } on fail error e {
+        // Ensure the broker flow/connection is released even if receive/ack fails, otherwise the
+        // leak accumulates across the many tests that drain a queue.
+        error? closeResult = receiver->close();
+        return e;
+    }
+    check receiver->close();
+}
+
 @test:Config {
     groups: ["smfPublisher", "smfPersistent"]
 }
 isolated function testPersistentPublishToQueueSubscription() returns error? {
+    check drainQueue(PERSISTENT_TEST_QUEUE);
     PersistentPublisher publisher = check new (BROKER_URL,
         auth = {username: BROKER_USERNAME, password: BROKER_PASSWORD}
     );
@@ -55,6 +83,7 @@ isolated function testPersistentPublishToQueueSubscription() returns error? {
     dependsOn: [testPersistentPublishToQueueSubscription]
 }
 isolated function testPersistentPublishWithMessageFields() returns error? {
+    check drainQueue(PERSISTENT_TEST_QUEUE);
     PersistentPublisher publisher = check new (BROKER_URL,
         auth = {username: BROKER_USERNAME, password: BROKER_PASSWORD}
     );
@@ -92,6 +121,7 @@ isolated function testPersistentPublishWithMessageFields() returns error? {
     dependsOn: [testPersistentPublishWithMessageFields]
 }
 isolated function testPersistentPublishBinaryAndJsonPayloads() returns error? {
+    check drainQueue(PERSISTENT_TEST_QUEUE);
     PersistentPublisher publisher = check new (BROKER_URL,
         auth = {username: BROKER_USERNAME, password: BROKER_PASSWORD}
     );

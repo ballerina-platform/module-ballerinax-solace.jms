@@ -53,8 +53,9 @@ public final class PersistentPublisherActions {
      * @return {@code null} on success, or Ballerina {@code smf:Error} on failure
      */
     public static Object init(BObject publisher, BString url, BMap<BString, Object> config) {
+        MessagingService messagingService = null;
         try {
-            MessagingService messagingService = PublisherUtils.connect(url.getValue(), config);
+            messagingService = PublisherUtils.connect(url.getValue(), config);
             PersistentMessagePublisherBuilder builder = messagingService.createPersistentMessagePublisherBuilder();
             PublisherUtils.applyBackPressure(builder, config);
             PersistentMessagePublisher persistentPublisher = builder.build().start();
@@ -62,6 +63,7 @@ public final class PersistentPublisherActions {
             publisher.addNativeData(NATIVE_PUBLISHER, persistentPublisher);
             return null;
         } catch (Exception exception) {
+            CommonUtils.disconnectQuietly(messagingService);
             return CommonUtils.createError(
                     String.format("Error occurred while initializing the Solace persistent message publisher: %s",
                             exception.getMessage()), exception);

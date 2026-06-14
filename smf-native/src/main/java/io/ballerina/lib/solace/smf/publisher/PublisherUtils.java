@@ -20,13 +20,10 @@ package io.ballerina.lib.solace.smf.publisher;
 
 import com.solace.messaging.MessagingService;
 import com.solace.messaging.config.PublisherBackPressureConfiguration;
-import com.solace.messaging.config.profile.ConfigurationProfile;
-import io.ballerina.lib.solace.smf.config.ConnectionPropertiesBuilder;
+import io.ballerina.lib.solace.smf.CommonUtils;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
-
-import java.util.Properties;
 
 /**
  * Shared helpers for the SMF publisher actions.
@@ -46,11 +43,7 @@ final class PublisherUtils {
     private PublisherUtils() {}
 
     static MessagingService connect(String url, BMap<BString, Object> config) {
-        Properties props = ConnectionPropertiesBuilder.buildServiceProperties(url, config);
-        return MessagingService.builder(ConfigurationProfile.V1)
-                .fromProperties(props)
-                .build()
-                .connect();
+        return CommonUtils.connect(url, config);
     }
 
     /**

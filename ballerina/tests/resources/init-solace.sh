@@ -4,23 +4,55 @@
 
 set -e
 
-echo "Waiting for Solace broker to be ready..."
-sleep 10
-
 SOLACE_URL="http://localhost:8080"
 SEMP_URL="${SOLACE_URL}/SEMP/v2/config"
 VPN="default"
 AUTH="admin:admin"
 
+# Wait until the SEMP API is actually ready rather than sleeping a fixed interval. Provisioning an
+# unready broker silently failed before (responses were discarded with `|| true`), so the queues
+# were never created and every queue-dependent test failed with "Queue Not Found".
+echo "Waiting for Solace broker to be ready..."
+ready=false
+for _ in $(seq 1 60); do
+    if [ "$(curl -s -o /dev/null -w '%{http_code}' -u "${AUTH}" "${SEMP_URL}/about")" = "200" ]; then
+        ready=true
+        break
+    fi
+    sleep 5
+done
+if [ "$ready" != "true" ]; then
+    echo "ERROR: Solace SEMP API at ${SEMP_URL} did not become ready within the timeout." >&2
+    exit 1
+fi
+
+# Issues a SEMP POST and fails loudly on a real error. A 2xx is success; a 400 ALREADY_EXISTS is
+# treated as success so the script is idempotent across re-runs against a persistent broker.
+semp_post() {
+    local url=$1
+    local payload=$2
+    local description=$3
+    local response http_code body
+    response=$(curl -sS -X POST "$url" -u "${AUTH}" -H "Content-Type: application/json" \
+        -d "$payload" -w $'\n%{http_code}')
+    http_code=$(printf '%s' "$response" | tail -n1)
+    body=$(printf '%s' "$response" | sed '$d')
+    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+        echo "  created: ${description}"
+    elif [ "$http_code" = "400" ] && printf '%s' "$body" | grep -qi "already exists"; then
+        echo "  exists:  ${description}"
+    else
+        echo "ERROR (HTTP ${http_code}) while creating ${description}:" >&2
+        printf '%s\n' "$body" >&2
+        exit 1
+    fi
+}
+
 # Function to create a queue with guaranteed messaging support
 create_queue() {
     local queue_name=$1
-    echo "Creating queue: $queue_name"
-
-    curl -X POST "${SEMP_URL}/msgVpns/${VPN}/queues" \
-        -u "${AUTH}" \
-        -H "Content-Type: application/json" \
-        -d "{
+    semp_post "${SEMP_URL}/msgVpns/${VPN}/queues" \
+        "{
             \"queueName\": \"${queue_name}\",
             \"accessType\": \"exclusive\",
             \"permission\": \"delete\",
@@ -29,7 +61,7 @@ create_queue() {
             \"maxMsgSpoolUsage\": 100,
             \"respectTtlEnabled\": true
         }" \
-        -s -o /dev/null -w "%{http_code}\n" || true
+        "queue ${queue_name}"
 }
 
 # Note: Compression is enabled by default on the Solace broker on port 55003
@@ -42,15 +74,11 @@ create_queue() {
 add_queue_subscription() {
     local queue_name=$1
     local topic=$2
-    echo "Adding subscription '${topic}' to queue: $queue_name"
-
-    curl -X POST "${SEMP_URL}/msgVpns/${VPN}/queues/${queue_name}/subscriptions" \
-        -u "${AUTH}" \
-        -H "Content-Type: application/json" \
-        -d "{
+    semp_post "${SEMP_URL}/msgVpns/${VPN}/queues/${queue_name}/subscriptions" \
+        "{
             \"subscriptionTopic\": \"${topic}\"
         }" \
-        -s -o /dev/null -w "%{http_code}\n" || true
+        "subscription '${topic}' on queue ${queue_name}"
 }
 
 # Create queues
@@ -60,5 +88,30 @@ create_queue "test-transacted-queue"
 # Queue + topic-to-queue mapping used by the SMF persistent publisher tests
 create_queue "smf-test-queue"
 add_queue_subscription "smf-test-queue" "smf/test/persistent"
+
+# Queues + topic-to-queue mappings used by the SMF receiver, settlement, and service tests
+create_queue "smf-receiver-queue"
+add_queue_subscription "smf-receiver-queue" "smf/test/receiver"
+create_queue "smf-settlement-queue"
+add_queue_subscription "smf-settlement-queue" "smf/test/settlement"
+create_queue "smf-rejected-queue"
+add_queue_subscription "smf-rejected-queue" "smf/test/rejected"
+create_queue "smf-service-queue"
+add_queue_subscription "smf-service-queue" "smf/test/service"
+create_queue "smf-autoack-queue"
+add_queue_subscription "smf-autoack-queue" "smf/test/autoack"
+
+# Replay log (VPN-wide) + queue used by the SMF message replay tests.
+# The replay log must exist before the test messages are published.
+semp_post "${SEMP_URL}/msgVpns/${VPN}/replayLogs" \
+    "{
+        \"replayLogName\": \"test-replay-log\",
+        \"ingressEnabled\": true,
+        \"egressEnabled\": true,
+        \"maxSpoolUsage\": 50
+    }" \
+    "replay log test-replay-log"
+create_queue "smf-replay-queue"
+add_queue_subscription "smf-replay-queue" "smf/test/replay"
 
 echo "Solace initialization completed!"

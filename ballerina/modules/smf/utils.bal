@@ -14,6 +14,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
+# Checks whether a given type is a subtype of `smf:Message`.
+#
+# + typeDesc - The type needed to be checked as a subtype of `smf:Message`
+# + return - True if the type is a subtype of `smf:Message`, else false
+isolated function isSmfMessage(typedesc<anydata> typeDesc) returns boolean {
+    if typeDesc is typedesc<Message> {
+        return true;
+    }
+    return false;
+}
+
 isolated function convertPayload(anydata payload) returns string|byte[] {
     if payload is string {
         return payload;

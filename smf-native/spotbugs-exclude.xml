@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- The Service wrapper intentionally exposes the Ballerina service object and its
+         configuration map to the listener and dispatcher; mirrors the JMS-side exclusion -->
+    <Match>
+        <Class name="io.ballerina.lib.solace.smf.listener.Service"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+</FindBugsFilter>
