@@ -31,8 +31,6 @@ import io.ballerina.runtime.api.values.BTypedesc;
 
 import java.math.BigDecimal;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static io.ballerina.lib.solace.smf.receiver.ReceiverUtils.NATIVE_MESSAGING_SERVICE;
 import static io.ballerina.lib.solace.smf.receiver.ReceiverUtils.NATIVE_RECEIVER;
@@ -42,10 +40,6 @@ import static io.ballerina.lib.solace.smf.receiver.ReceiverUtils.TERMINATE_GRACE
  * Actions class for {@link PersistentMessageReceiver} with utility methods to invoke as inter-op functions.
  */
 public final class PersistentReceiverActions {
-
-    // Margin added to the receive timeout when waiting on the result future, to absorb virtual-thread
-    // scheduling overhead so a normally-completing receive is never cut off by the outer wait.
-    private static final long GET_TIMEOUT_MARGIN_MILLIS = 10_000;
 
     private PersistentReceiverActions() {}
 
@@ -107,13 +101,7 @@ public final class PersistentReceiverActions {
         });
 
         try {
-            // Bound the wait so a stalled receive cannot block the caller indefinitely; the receive
-            // call self-limits to timeoutMillis, so the margin only guards against an unexpected stall.
-            return future.get(timeoutMillis + GET_TIMEOUT_MARGIN_MILLIS, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException exception) {
-            return CommonUtils.createError(
-                    String.format("Receive operation did not complete within %d ms",
-                            timeoutMillis + GET_TIMEOUT_MARGIN_MILLIS), exception);
+            return future.get();
         } catch (Exception exception) {
             return CommonUtils.createError(
                     String.format("Error occurred while waiting for operation to complete: %s",
@@ -221,21 +209,21 @@ public final class PersistentReceiverActions {
      * @return {@code null} on success, or Ballerina {@code smf:Error} on failure
      */
     public static Object close(BObject receiver) {
+        PersistentMessageReceiver persistentReceiver =
+                (PersistentMessageReceiver) receiver.getNativeData(NATIVE_RECEIVER);
+        MessagingService messagingService = (MessagingService) receiver.getNativeData(NATIVE_MESSAGING_SERVICE);
         try {
-            PersistentMessageReceiver persistentReceiver =
-                    (PersistentMessageReceiver) receiver.getNativeData(NATIVE_RECEIVER);
-            MessagingService messagingService = (MessagingService) receiver.getNativeData(NATIVE_MESSAGING_SERVICE);
             if (persistentReceiver != null) {
                 persistentReceiver.terminate(TERMINATE_GRACE_PERIOD_MILLIS);
-            }
-            if (messagingService != null) {
-                messagingService.disconnect();
             }
             return null;
         } catch (Exception exception) {
             return CommonUtils.createError(
                     String.format("Error occurred while closing the persistent message receiver: %s",
                             exception.getMessage()), exception);
+        } finally {
+            // Always release the connection, even if terminate() failed, to avoid leaking it.
+            CommonUtils.disconnectQuietly(messagingService);
         }
     }
 }

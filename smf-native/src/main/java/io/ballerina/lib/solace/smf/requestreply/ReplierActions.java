@@ -163,21 +163,21 @@ public final class ReplierActions {
      * @return {@code null} on success, or Ballerina {@code smf:Error} on failure
      */
     public static Object close(BObject replier) {
+        RequestReplyMessageReceiver receiver =
+                (RequestReplyMessageReceiver) replier.getNativeData(NATIVE_REPLIER_RECEIVER);
+        MessagingService messagingService = (MessagingService) replier.getNativeData(NATIVE_MESSAGING_SERVICE);
         try {
-            RequestReplyMessageReceiver receiver =
-                    (RequestReplyMessageReceiver) replier.getNativeData(NATIVE_REPLIER_RECEIVER);
-            MessagingService messagingService = (MessagingService) replier.getNativeData(NATIVE_MESSAGING_SERVICE);
             if (receiver != null) {
                 receiver.terminate(TERMINATE_GRACE_PERIOD_MILLIS);
-            }
-            if (messagingService != null) {
-                messagingService.disconnect();
             }
             return null;
         } catch (Exception exception) {
             return CommonUtils.createError(
                     String.format("Error occurred while closing the message replier: %s",
                             exception.getMessage()), exception);
+        } finally {
+            // Always release the connection, even if terminate() failed, to avoid leaking it.
+            CommonUtils.disconnectQuietly(messagingService);
         }
     }
 }

@@ -153,16 +153,31 @@ public final class Listener {
     private static Object stop(BObject bListener, long gracePeriodMillis) {
         MessagingService messagingService = (MessagingService) bListener.getNativeData(NATIVE_MESSAGING_SERVICE);
         List<BObject> bServices = (List<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
-        try {
-            for (BObject bService: bServices) {
+        // Stop every service's receiver even if one fails, and always disconnect the messaging
+        // service, so a failure terminating one receiver cannot leak the connection or the
+        // remaining receivers/executors. The first failure (if any) is reported.
+        Exception firstFailure = null;
+        for (BObject bService: bServices) {
+            try {
                 stopReceiver(bService, gracePeriodMillis);
+            } catch (Exception e) {
+                if (firstFailure == null) {
+                    firstFailure = e;
+                }
             }
+        }
+        try {
             messagingService.disconnect();
         } catch (Exception e) {
-            String errorMsg = Objects.isNull(e.getMessage()) ? "Unknown error" : e.getMessage();
+            if (firstFailure == null) {
+                firstFailure = e;
+            }
+        }
+        if (firstFailure != null) {
+            String errorMsg = Objects.isNull(firstFailure.getMessage()) ? "Unknown error" : firstFailure.getMessage();
             return CommonUtils.createError(
                     String.format("Error occurred while stopping the Ballerina Solace SMF listener: %s",
-                            errorMsg), e);
+                            errorMsg), firstFailure);
         }
         return null;
     }

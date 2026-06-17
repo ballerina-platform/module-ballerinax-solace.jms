@@ -37,8 +37,10 @@ semp_post() {
     local description=$3
     local response http_code body attempt
     for attempt in $(seq 1 24); do
+        # `|| response=$'\n000'` keeps `set -e` from exiting on a curl-level failure (connection
+        # refused/dropped) and routes it into the "000" retry branch below instead of aborting.
         response=$(curl -sS -X POST "$url" -u "${AUTH}" -H "Content-Type: application/json" \
-            -d "$payload" -w $'\n%{http_code}' 2>/dev/null)
+            -d "$payload" -w $'\n%{http_code}' 2>/dev/null) || response=$'\n000'
         http_code=$(printf '%s' "$response" | tail -n1)
         body=$(printf '%s' "$response" | sed '$d')
         if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then

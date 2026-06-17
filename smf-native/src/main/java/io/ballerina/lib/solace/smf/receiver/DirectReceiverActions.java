@@ -113,20 +113,20 @@ public final class DirectReceiverActions {
      * @return {@code null} on success, or Ballerina {@code smf:Error} on failure
      */
     public static Object close(BObject receiver) {
+        DirectMessageReceiver directReceiver = (DirectMessageReceiver) receiver.getNativeData(NATIVE_RECEIVER);
+        MessagingService messagingService = (MessagingService) receiver.getNativeData(NATIVE_MESSAGING_SERVICE);
         try {
-            DirectMessageReceiver directReceiver = (DirectMessageReceiver) receiver.getNativeData(NATIVE_RECEIVER);
-            MessagingService messagingService = (MessagingService) receiver.getNativeData(NATIVE_MESSAGING_SERVICE);
             if (directReceiver != null) {
                 directReceiver.terminate(TERMINATE_GRACE_PERIOD_MILLIS);
-            }
-            if (messagingService != null) {
-                messagingService.disconnect();
             }
             return null;
         } catch (Exception exception) {
             return CommonUtils.createError(
                     String.format("Error occurred while closing the direct message receiver: %s",
                             exception.getMessage()), exception);
+        } finally {
+            // Always release the connection, even if terminate() failed, to avoid leaking it.
+            CommonUtils.disconnectQuietly(messagingService);
         }
     }
 }

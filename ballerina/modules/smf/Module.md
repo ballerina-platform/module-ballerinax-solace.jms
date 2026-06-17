@@ -10,6 +10,19 @@ Use this module for these SMF-native capabilities; use the `ballerinax/solace` m
 need JMS semantics such as transacted sessions, durable topic subscribers, or `MapMessage`
 (structured SDT map) payloads.
 
+## Message payloads
+
+The `payload` field accepts any `anydata` on publish and is bound to the receiver's expected payload
+type on receive. Two behaviors are worth noting:
+
+- **`xml` payloads** are published as a text body. They round-trip back to `xml` only when the
+  receiver binds the payload to an explicit `xml` type; binding to `anydata` yields the `string`
+  form, because the SMF publisher does not set the `JMS_Solace_isXML` marker that the receiver uses
+  to reconstruct `xml` from an `anydata` payload.
+- A message with **no body, or a binary body bound to a `string`/`xml` payload type**, yields an
+  empty value (`""`) rather than an error. Bind such payloads to `byte[]` (or `anydata`) to receive
+  the raw bytes.
+
 ## Publishers
 
 The module provides two publishers with per-publisher quality of service:

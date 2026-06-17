@@ -32,8 +32,6 @@ import io.ballerina.runtime.api.values.BString;
 
 import java.math.BigDecimal;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static io.ballerina.lib.solace.smf.publisher.PublisherUtils.NATIVE_MESSAGING_SERVICE;
 import static io.ballerina.lib.solace.smf.publisher.PublisherUtils.NATIVE_PUBLISHER;
@@ -43,10 +41,6 @@ import static io.ballerina.lib.solace.smf.publisher.PublisherUtils.TERMINATE_GRA
  * Actions class for {@link PersistentMessagePublisher} with utility methods to invoke as inter-op functions.
  */
 public final class PersistentPublisherActions {
-
-    // Margin added to the publish timeout when waiting on the result future, to absorb virtual-thread
-    // scheduling overhead so a normally-completing publish is never cut off by the outer wait.
-    private static final long GET_TIMEOUT_MARGIN_MILLIS = 10_000;
 
     private PersistentPublisherActions() {}
 
@@ -114,13 +108,7 @@ public final class PersistentPublisherActions {
         });
 
         try {
-            // Bound the wait so a stuck publish (e.g. WAIT_WHEN_FULL back-pressure on a full buffer)
-            // cannot block the caller indefinitely; the margin allows for scheduling overhead.
-            return future.get(timeoutMillis + GET_TIMEOUT_MARGIN_MILLIS, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException exception) {
-            return CommonUtils.createError(
-                    String.format("Publish operation did not complete within %d ms for topic '%s'",
-                            timeoutMillis + GET_TIMEOUT_MARGIN_MILLIS, topic.getValue()), exception);
+            return future.get();
         } catch (Exception exception) {
             return CommonUtils.createError(
                     String.format("Error occurred while waiting for publish operation to complete: %s",
@@ -135,21 +123,21 @@ public final class PersistentPublisherActions {
      * @return {@code null} on success, or Ballerina {@code smf:Error} on failure
      */
     public static Object close(BObject publisher) {
+        PersistentMessagePublisher persistentPublisher =
+                (PersistentMessagePublisher) publisher.getNativeData(NATIVE_PUBLISHER);
+        MessagingService messagingService = (MessagingService) publisher.getNativeData(NATIVE_MESSAGING_SERVICE);
         try {
-            PersistentMessagePublisher persistentPublisher =
-                    (PersistentMessagePublisher) publisher.getNativeData(NATIVE_PUBLISHER);
-            MessagingService messagingService = (MessagingService) publisher.getNativeData(NATIVE_MESSAGING_SERVICE);
             if (persistentPublisher != null) {
                 persistentPublisher.terminate(TERMINATE_GRACE_PERIOD_MILLIS);
-            }
-            if (messagingService != null) {
-                messagingService.disconnect();
             }
             return null;
         } catch (Exception exception) {
             return CommonUtils.createError(
                     String.format("Error occurred while closing the persistent message publisher: %s",
                             exception.getMessage()), exception);
+        } finally {
+            // Always release the connection, even if terminate() failed, to avoid leaking it.
+            CommonUtils.disconnectQuietly(messagingService);
         }
     }
 }

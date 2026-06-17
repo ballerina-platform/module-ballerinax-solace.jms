@@ -108,21 +108,21 @@ public final class DirectPublisherActions {
      * @return {@code null} on success, or Ballerina {@code smf:Error} on failure
      */
     public static Object close(BObject publisher) {
+        DirectMessagePublisher directPublisher =
+                (DirectMessagePublisher) publisher.getNativeData(NATIVE_PUBLISHER);
+        MessagingService messagingService = (MessagingService) publisher.getNativeData(NATIVE_MESSAGING_SERVICE);
         try {
-            DirectMessagePublisher directPublisher =
-                    (DirectMessagePublisher) publisher.getNativeData(NATIVE_PUBLISHER);
-            MessagingService messagingService = (MessagingService) publisher.getNativeData(NATIVE_MESSAGING_SERVICE);
             if (directPublisher != null) {
                 directPublisher.terminate(TERMINATE_GRACE_PERIOD_MILLIS);
-            }
-            if (messagingService != null) {
-                messagingService.disconnect();
             }
             return null;
         } catch (Exception exception) {
             return CommonUtils.createError(
                     String.format("Error occurred while closing the direct message publisher: %s",
                             exception.getMessage()), exception);
+        } finally {
+            // Always release the connection, even if terminate() failed, to avoid leaking it.
+            CommonUtils.disconnectQuietly(messagingService);
         }
     }
 }

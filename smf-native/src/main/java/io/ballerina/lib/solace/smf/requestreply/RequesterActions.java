@@ -129,21 +129,21 @@ public final class RequesterActions {
      * @return {@code null} on success, or Ballerina {@code smf:Error} on failure
      */
     public static Object close(BObject requester) {
+        RequestReplyMessagePublisher publisher =
+                (RequestReplyMessagePublisher) requester.getNativeData(NATIVE_REQUESTER);
+        MessagingService messagingService = (MessagingService) requester.getNativeData(NATIVE_MESSAGING_SERVICE);
         try {
-            RequestReplyMessagePublisher publisher =
-                    (RequestReplyMessagePublisher) requester.getNativeData(NATIVE_REQUESTER);
-            MessagingService messagingService = (MessagingService) requester.getNativeData(NATIVE_MESSAGING_SERVICE);
             if (publisher != null) {
                 publisher.terminate(TERMINATE_GRACE_PERIOD_MILLIS);
-            }
-            if (messagingService != null) {
-                messagingService.disconnect();
             }
             return null;
         } catch (Exception exception) {
             return CommonUtils.createError(
                     String.format("Error occurred while closing the message requester: %s",
                             exception.getMessage()), exception);
+        } finally {
+            // Always release the connection, even if terminate() failed, to avoid leaking it.
+            CommonUtils.disconnectQuietly(messagingService);
         }
     }
 }
