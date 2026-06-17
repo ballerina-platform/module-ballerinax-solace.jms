@@ -97,6 +97,12 @@ public class Service {
 
         boolean isQueueSubscription = ReceiverUtils.isQueueSubscription((BMap<BString, Object>) svcConfig);
         boolean isAutoAck = ReceiverUtils.isAutoAck((BMap<BString, Object>) svcConfig);
+        // Mirror the client-side validatePersistentReceiverConfigurations check: autoAck and
+        // negative settlement are mutually exclusive (the messaging API cannot enable both).
+        if (isAutoAck && ReceiverUtils.isNegativeSettlementEnabled((BMap<BString, Object>) svcConfig)) {
+            throw CommonUtils.createError(
+                    "Automatic acknowledgement and negative settlement are mutually exclusive.");
+        }
         for (RemoteMethodType remoteMethod: remoteMethods) {
             String remoteMethodName = remoteMethod.getName();
             if (ON_MSG_METHOD.equals(remoteMethodName)) {

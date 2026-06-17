@@ -40,7 +40,7 @@ password = "your-password"
 
 ## Expected output
 
-```
+```text
 === Solace SMF order-processing example ===
 
 [1] Persistent publish + receive with data binding and ack

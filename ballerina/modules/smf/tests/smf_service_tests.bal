@@ -243,3 +243,28 @@ function testQueueServiceWithoutCallerOrAutoAckRejected() returns error? {
     }
     test:assertTrue(result.message().includes("must declare an 'smf:Caller'"));
 }
+
+@test:Config {
+    groups: ["smfService", "smfServiceValidation"]
+}
+function testQueueServiceConflictingAckModesRejected() returns error? {
+    Listener smfListener = check new (BROKER_URL,
+        auth = {username: BROKER_USERNAME, password: BROKER_PASSWORD}
+    );
+    // autoAck and negativeSettlementEnabled are mutually exclusive; attach must reject the service,
+    // mirroring the client PersistentReceiver validation.
+    Service invalidService = @ServiceConfig {
+        queueName: SERVICE_TEST_QUEUE,
+        autoAck: true,
+        negativeSettlementEnabled: true
+    } service object {
+        remote function onMessage(Message message) returns error? {
+        }
+    };
+    Error? result = smfListener.attach(invalidService);
+    check smfListener.gracefulStop();
+    if result !is Error {
+        test:assertFail("Expected an error when a queue service enables both autoAck and negative settlement");
+    }
+    test:assertTrue(result.message().includes("mutually exclusive"));
+}

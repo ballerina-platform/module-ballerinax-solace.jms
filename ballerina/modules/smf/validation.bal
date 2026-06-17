@@ -30,8 +30,8 @@ isolated function validateConfigurations(ConnectionConfiguration config) returns
     var authConfig = config.auth;
     if authConfig is solace:BasicAuthConfig {
         string username = authConfig.username;
-        if username.length() > 32 {
-            return error Error("Username cannot exceed 32 characters");
+        if username.length() > 189 {
+            return error Error("Username cannot exceed 189 characters");
         }
 
         string? password = authConfig.password;

@@ -32,9 +32,11 @@ import com.solace.messaging.resources.ShareName;
 import com.solace.messaging.resources.TopicSubscription;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BArray;
+import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -128,9 +130,13 @@ public final class ReceiverUtils {
             return ReplayStrategy.replicationGroupMessageIdBased(
                     ReplicationGroupMessageId.of(strategyConfig.getStringValue(AFTER_MESSAGE_ID).getValue()));
         }
-        // time:Utc is a tuple of [epoch seconds, fraction of a second]
+        // time:Utc is a tuple of [epoch seconds, fraction of a second]; preserve the fractional
+        // component as a nano adjustment instead of truncating to whole seconds.
         BArray utcTime = strategyConfig.getArrayValue(FROM_TIME);
-        Instant fromInstant = Instant.ofEpochSecond(utcTime.getInt(0));
+        long epochSeconds = utcTime.getInt(0);
+        long nanoAdjustment = ((BDecimal) utcTime.get(1)).decimalValue()
+                .multiply(BigDecimal.valueOf(1_000_000_000L)).longValue();
+        Instant fromInstant = Instant.ofEpochSecond(epochSeconds, nanoAdjustment);
         return ReplayStrategy.timeBased(ZonedDateTime.ofInstant(fromInstant, ZoneOffset.UTC));
     }
 

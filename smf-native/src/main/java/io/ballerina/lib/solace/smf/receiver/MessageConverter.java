@@ -155,15 +155,15 @@ public final class MessageConverter {
         try {
             switch (typeTag) {
                 case TypeTags.STRING_TAG:
-                    return StringUtils.fromString(message.getPayloadAsString());
+                    return StringUtils.fromString(textPayloadOrEmpty(message));
                 case TypeTags.XML_TAG:
-                    return XmlUtils.parse(message.getPayloadAsString());
+                    return XmlUtils.parse(textPayloadOrEmpty(message));
                 case TypeTags.ANYDATA_TAG:
                     return getPayloadAsAnydata(message);
                 case TypeTags.ARRAY_TAG:
                     Type elementType = TypeUtils.getReferredType(((ArrayType) payloadType).getElementType());
                     if (elementType.getTag() == TypeTags.BYTE_TAG) {
-                        return ValueCreator.createArrayValue(message.getPayloadAsBytes());
+                        return ValueCreator.createArrayValue(bytesOrEmpty(message));
                     }
                     return getValueFromJson(payloadType, message);
                 default:
@@ -177,7 +177,7 @@ public final class MessageConverter {
     private static Object getPayloadAsAnydata(InboundMessage message) {
         if (message.hasProperty(SOLACE_ISXML_PROPERTY)
                 && Boolean.parseBoolean(message.getProperty(SOLACE_ISXML_PROPERTY))) {
-            return XmlUtils.parse(message.getPayloadAsString());
+            return XmlUtils.parse(textPayloadOrEmpty(message));
         }
         String textPayload = message.getPayloadAsString();
         if (textPayload != null) {
@@ -188,9 +188,22 @@ public final class MessageConverter {
     }
 
     private static Object getValueFromJson(Type type, InboundMessage message) {
-        byte[] bytes = message.getPayloadAsBytes();
-        String jsonString = new String(bytes == null ? new byte[0] : bytes, StandardCharsets.UTF_8);
+        byte[] bytes = bytesOrEmpty(message);
+        String jsonString = new String(bytes, StandardCharsets.UTF_8);
         return ValueUtils.convert(JsonUtils.parse(jsonString), type);
+    }
+
+    // The payload accessors return null for an empty or no-body message (and getPayloadAsString also
+    // returns null for a binary payload); these helpers provide the empty fallbacks the type-specific
+    // conversions expect, so a payload-less message binds cleanly instead of raising a raw NPE.
+    private static String textPayloadOrEmpty(InboundMessage message) {
+        String textPayload = message.getPayloadAsString();
+        return textPayload == null ? "" : textPayload;
+    }
+
+    private static byte[] bytesOrEmpty(InboundMessage message) {
+        byte[] bytes = message.getPayloadAsBytes();
+        return bytes == null ? new byte[0] : bytes;
     }
 
     private static RecordType getRecordType(Type type) {

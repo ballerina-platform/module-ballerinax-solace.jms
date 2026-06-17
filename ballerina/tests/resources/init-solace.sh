@@ -28,24 +28,36 @@ fi
 
 # Issues a SEMP POST and fails loudly on a real error. A 2xx is success; a 400 ALREADY_EXISTS is
 # treated as success so the script is idempotent across re-runs against a persistent broker.
+# The SEMP /about endpoint comes up before the message-spool (guaranteed-messaging) subsystem, so
+# queue creation can transiently return MESSAGE_SPOOL_DATA_NOT_AVAILABLE; retry on that until the
+# spool is ready rather than failing the whole provisioning step.
 semp_post() {
     local url=$1
     local payload=$2
     local description=$3
-    local response http_code body
-    response=$(curl -sS -X POST "$url" -u "${AUTH}" -H "Content-Type: application/json" \
-        -d "$payload" -w $'\n%{http_code}')
-    http_code=$(printf '%s' "$response" | tail -n1)
-    body=$(printf '%s' "$response" | sed '$d')
-    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-        echo "  created: ${description}"
-    elif [ "$http_code" = "400" ] && printf '%s' "$body" | grep -qi "already exists"; then
-        echo "  exists:  ${description}"
-    else
-        echo "ERROR (HTTP ${http_code}) while creating ${description}:" >&2
-        printf '%s\n' "$body" >&2
-        exit 1
-    fi
+    local response http_code body attempt
+    for attempt in $(seq 1 24); do
+        response=$(curl -sS -X POST "$url" -u "${AUTH}" -H "Content-Type: application/json" \
+            -d "$payload" -w $'\n%{http_code}' 2>/dev/null)
+        http_code=$(printf '%s' "$response" | tail -n1)
+        body=$(printf '%s' "$response" | sed '$d')
+        if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+            echo "  created: ${description}"
+            return 0
+        elif [ "$http_code" = "400" ] && printf '%s' "$body" | grep -qi "already exists"; then
+            echo "  exists:  ${description}"
+            return 0
+        elif [ "$http_code" = "000" ] || printf '%s' "$body" | grep -qiE "SPOOL_DATA_NOT_AVAILABLE|not available|not ready"; then
+            # Management plane is up but the message-spool is still initializing; wait and retry.
+            sleep 5
+        else
+            echo "ERROR (HTTP ${http_code}) while creating ${description}:" >&2
+            printf '%s\n' "$body" >&2
+            exit 1
+        fi
+    done
+    echo "ERROR: ${description} did not succeed after retries (message spool not ready)." >&2
+    exit 1
 }
 
 # Function to create a queue with guaranteed messaging support
