@@ -57,7 +57,7 @@ public final class Actions {
      * @param consumer Ballerina consumer object
      * @param url      Solace broker URL
      * @param config   Ballerina consumer configurations
-     * @return {@code null} on success, or Ballerina {@code solace:Error} on failure
+     * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object init(BObject consumer, BString url, BMap<BString, Object> config) {
         try {
@@ -106,7 +106,7 @@ public final class Actions {
      * @param consumer  Ballerina consumer object
      * @param timeout   Timeout in seconds
      * @param bTypedesc Expected message type
-     * @return Ballerina message, {@code null} if no message available, or {@code solace:Error} on failure
+     * @return Ballerina message, {@code null} if no message available, or {@code jms:Error} on failure
      */
     public static Object receive(BObject consumer, BDecimal timeout, BTypedesc bTypedesc) {
         MessageConsumer nativeConsumer = (MessageConsumer) consumer.getNativeData(NATIVE_CONSUMER);
@@ -151,7 +151,7 @@ public final class Actions {
      *
      * @param consumer  Ballerina consumer object
      * @param bTypedesc Expected message type
-     * @return Ballerina message, {@code null} if no message available, or {@code solace:Error} on failure
+     * @return Ballerina message, {@code null} if no message available, or {@code jms:Error} on failure
      */
     public static Object receiveNoWait(BObject consumer, BTypedesc bTypedesc) {
         MessageConsumer nativeConsumer = (MessageConsumer) consumer.getNativeData(NATIVE_CONSUMER);
@@ -193,7 +193,7 @@ public final class Actions {
      * Acknowledges the specified message.
      *
      * @param message Ballerina message to acknowledge
-     * @return {@code null} on success, or Ballerina {@code solace:Error} on failure
+     * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object acknowledge(BMap<BString, Object> message) {
         try {
@@ -218,7 +218,7 @@ public final class Actions {
      * Commits all messages received in this transaction and releases any locks currently held.
      *
      * @param consumer Ballerina consumer object
-     * @return {@code null} on success, or Ballerina {@code solace:Error} on failure
+     * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object commit(BObject consumer) {
         Session nativeSession = (Session) consumer.getNativeData(NATIVE_SESSION);
@@ -239,7 +239,7 @@ public final class Actions {
      * Rolls back any messages received in this transaction and releases any locks currently held.
      *
      * @param consumer Ballerina consumer object
-     * @return {@code null} on success, or Ballerina {@code solace:Error} on failure
+     * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object rollback(BObject consumer) {
         Session nativeSession = (Session) consumer.getNativeData(NATIVE_SESSION);
@@ -260,7 +260,7 @@ public final class Actions {
      * Closes the message consumer and the underlying connection.
      *
      * @param consumer Ballerina consumer object
-     * @return {@code null} on success, or Ballerina {@code solace:Error} on failure
+     * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object close(BObject consumer) {
         try {

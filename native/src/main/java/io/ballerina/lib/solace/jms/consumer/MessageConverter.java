@@ -246,7 +246,7 @@ public final class MessageConverter {
                 && typeTag != TypeTags.RECORD_TYPE_TAG) {
             throw new BallerinaSolaceDatabindingException(
                     String.format("Data binding failed: Cannot bind MapMessage to type '%s'. " +
-                            "Expected 'map<solace:Value>'", payloadType));
+                            "Expected 'map<solace.jms:Value>'", payloadType));
         }
 
         BMap<BString, Object> payload = ValueCreator.createMapValue(BALLERINA_MAP_MSG_TYPE);

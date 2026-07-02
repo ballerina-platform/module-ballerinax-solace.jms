@@ -53,7 +53,7 @@ public final class Actions {
      * @param producer Ballerina producer object
      * @param url      Solace broker URL
      * @param config   Ballerina producer configurations
-     * @return {@code null} on success, or Ballerina {@code solace:Error} on failure
+     * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object init(BObject producer, BString url, BMap<BString, Object> config) {
         try {
@@ -95,7 +95,7 @@ public final class Actions {
      *
      * @param producer Ballerina producer object
      * @param bMessage Ballerina Solace JMS message representation
-     * @return {@code null} on success, or Ballerina {@code solace:Error} on failure
+     * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object send(BObject producer, BMap<BString, Object> bMessage) {
         MessageProducer nativeProducer = (MessageProducer) producer.getNativeData(NATIVE_PRODUCER);
@@ -131,7 +131,7 @@ public final class Actions {
      * Commits all messages done in this transaction and releases any locks currently held.
      *
      * @param producer  Ballerina producer object
-     * @return          {@code null} on success, or Ballerina {@code solace:Error} if the session is not using a local
+     * @return          {@code null} on success, or Ballerina {@code jms:Error} if the session is not using a local
      *                  transaction or if the broker fails to commit the transaction due to some internal error
      */
     public static Object commit(BObject producer) {
@@ -153,7 +153,7 @@ public final class Actions {
      * Rolls back any messages done in this transaction and releases any locks currently held.
      *
      * @param producer Ballerina producer object
-     * @return {@code null} on success, or Ballerina {@code solace:Error} if the session is not using
+     * @return {@code null} on success, or Ballerina {@code jms:Error} if the session is not using
      * a local transaction or if the broker fails to roll back the transaction due to some internal error
      */
     public static Object rollback(BObject producer) {
@@ -175,7 +175,7 @@ public final class Actions {
      * Closes the message producer and the underlying connection.
      *
      * @param producer Ballerina producer object
-     * @return {@code null} on success, or Ballerina {@code solace:Error} on failure
+     * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object close(BObject producer) {
         try {
