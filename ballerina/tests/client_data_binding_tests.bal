@@ -520,7 +520,7 @@ isolated function testInvalidXmlToRecord() returns error? {
     |}|error? receivedMessage = databindingConsumer->receive(5.0);
     test:assertTrue(receivedMessage is error, "Should return an error when trying to bind XML to record");
     if receivedMessage is error {
-        test:assertEquals(receivedMessage.message(), "Data binding failed: Cannot bind TextMessage to type 'solace:record {| string name; int age; anydata...; |}'. Expected 'string' or 'xml'");
+        test:assertEquals(receivedMessage.message(), "Data binding failed: Cannot bind TextMessage to type 'solace.jms:record {| string name; int age; anydata...; |}'. Expected 'string' or 'xml'");
     }
 }
 

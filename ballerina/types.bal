@@ -16,7 +16,7 @@
 
 # The Solace service type.
 public type Service distinct service object {
-    // remote function onMessage(solace:Message message, solace:Caller caller) returns error?;
+    // remote function onMessage(jms:Message message, jms:Caller caller) returns error?;
 };
 
 # Defines the JMS session acknowledgement modes.
@@ -121,10 +121,10 @@ public type TopicServiceConfig record {|
     boolean noLocal = false;
 |};
 
-# The service configuration type for the `solace:Service`.
+# The service configuration type for the `jms:Service`.
 public type ServiceConfiguration QueueServiceConfig|TopicServiceConfig;
 
-# Annotation to configure the `solace:Service`.
+# Annotation to configure the `jms:Service`.
 public annotation ServiceConfiguration ServiceConfig on service;
 
 # Represents a message destination in Solace.

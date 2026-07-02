@@ -25,7 +25,7 @@ plugins {
     id "net.researchgate.release"
 }
 
-description = 'Ballerina - Solace Event Broker'
+description = 'Ballerina - Solace JMS Event Broker'
 
 allprojects {
     group = project.group
@@ -61,8 +61,8 @@ allprojects {
 }
 
 task build {
-    dependsOn(":solace-native:build")
-    dependsOn(":solace-ballerina:build")
+    dependsOn(":solace.jms-native:build")
+    dependsOn(":solace.jms-ballerina:build")
 }
 
 def moduleVersion = project.version.replace("-SNAPSHOT", "")

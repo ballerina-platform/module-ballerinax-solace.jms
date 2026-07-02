@@ -16,12 +16,12 @@
  * under the License.
  */
 
-module io.ballerina.lib.solace {
+module io.ballerina.lib.solace.jms {
     requires io.ballerina.runtime;
     requires io.ballerina.lang.value;
     requires javax.jms.api;
     requires sol.jms;
     requires java.naming;
 
-    exports io.ballerina.lib.solace;
+    exports io.ballerina.lib.solace.jms;
 }

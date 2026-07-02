@@ -41,7 +41,7 @@ plugins {
     id "com.gradle.enterprise" version "3.13.2"
 }
 
-def projectName = 'solace'
+def projectName = 'solace.jms'
 rootProject.name = "module-ballerinax-${projectName}"
 
 include ":checkstyle"

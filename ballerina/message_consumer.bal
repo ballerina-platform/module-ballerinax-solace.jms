@@ -21,7 +21,7 @@ public isolated client class MessageConsumer {
 
     # Initializes a new Solace message consumer with the given broker URL and configuration.
     # ```ballerina
-    # solace:MessageConsumer consumer = check new (brokerUrl, {
+    # jms:MessageConsumer consumer = check new (brokerUrl, {
     #     subscriptionConfig: {queueName: "orders"}
     # });
     # ```
@@ -31,7 +31,7 @@ public isolated client class MessageConsumer {
     # Multiple hosts can be specified as a comma-separated list for failover support.
     # Default ports: 55555 (standard), 55003 (compression), 55443 (SSL)
     # + config - Consumer configuration including connection settings and subscription details
-    # + return - A `solace:Error` if initialization fails or else `()`
+    # + return - A `jms:Error` if initialization fails or else `()`
     public isolated function init(string url, *ConsumerConfiguration config) returns Error? {
         Error? validated = validateConfigurations(config);
         if validated is Error {
@@ -43,30 +43,30 @@ public isolated client class MessageConsumer {
 
     isolated function externInit(string url, ConsumerConfiguration config) returns Error? = @java:Method {
         name: "init",
-        'class: "io.ballerina.lib.solace.consumer.Actions"
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
     # Receives the next message from the Solace broker, waiting up to the specified timeout.
     # ```ballerina
-    # solace:Message? message = check consumer->receive(5.0);
+    # jms:Message? message = check consumer->receive(5.0);
     # ```
     #
     # + timeout - The maximum time to wait for a message in seconds. Default is 10.0 seconds
     # + T - Optional type description of the expected data type
-    # + return - The received `Message`, `()` if no message is available within the timeout, or a `solace:Error` if there is an error
+    # + return - The received `Message`, `()` if no message is available within the timeout, or a `jms:Error` if there is an error
     isolated remote function receive(decimal timeout = 10.0, typedesc<Message> T = <>) returns T|Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.consumer.Actions"
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
     # Receives the next message from the Solace broker if one is immediately available, without waiting.
     # ```ballerina
-    # solace:Message? message = check consumer->receiveNoWait();
+    # jms:Message? message = check consumer->receiveNoWait();
     # ```
     # 
     # + T - Optional type description of the expected data type
-    # + return - The received `Message` if immediately available, `()` if no message is available, or a `solace:Error` if there is an error
+    # + return - The received `Message` if immediately available, `()` if no message is available, or a `jms:Error` if there is an error
     isolated remote function receiveNoWait(typedesc<Message> T = <>) returns T|Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.consumer.Actions"
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
     # Acknowledges the specified message. This method should only be called when the consumer is configured
@@ -76,9 +76,9 @@ public isolated client class MessageConsumer {
     # ```
     #
     # + message - The message to acknowledge
-    # + return - A `solace:Error` if there is an error or else `()`
+    # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function acknowledge(Message message) returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.consumer.Actions"
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
     # Commits all messages received in this transaction and releases any locks currently held.
@@ -87,10 +87,10 @@ public isolated client class MessageConsumer {
     # check consumer->'commit();
     # ```
     #
-    # + return - A `solace:Error` if there is an error or else `()`
+    # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'commit() returns Error? = @java:Method {
         name: "commit",
-        'class: "io.ballerina.lib.solace.consumer.Actions"
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
     # Rolls back any messages received in this transaction and releases any locks currently held.
@@ -99,10 +99,10 @@ public isolated client class MessageConsumer {
     # check consumer->'rollback();
     # ```
     #
-    # + return - A `solace:Error` if there is an error or else `()`
+    # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'rollback() returns Error? = @java:Method {
         name: "rollback",
-        'class: "io.ballerina.lib.solace.consumer.Actions"
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
     # Closes the message consumer and releases all resources.
@@ -110,8 +110,8 @@ public isolated client class MessageConsumer {
     # check consumer->close();
     # ```
     #
-    # + return - A `solace:Error` if there is an error or else `()`
+    # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function close() returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.consumer.Actions"
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 }
