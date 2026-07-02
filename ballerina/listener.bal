@@ -21,7 +21,7 @@ public isolated class Listener {
 
     # Initializes a new Solace message listener with the given broker URL and configuration.
     # ```ballerina
-    # listener solace:Listener messageListener = check new (
+    # listener jms:Listener messageListener = check new (
     #     url = "smf://localhost:55554",
     #     messageVpn = "default",
     #     auth = {
@@ -36,7 +36,7 @@ public isolated class Listener {
     # Multiple hosts can be specified as a comma-separated list for failover support.
     # Default ports: 55555 (standard), 55003 (compression), 55443 (SSL)
     # + config - configurations used when initializing the listener
-    # + return - `solace:Error` if an error occurs or `()` otherwise
+    # + return - `jms:Error` if an error occurs or `()` otherwise
     public isolated function init(string url, *ListenerConfiguration config) returns Error? {
         Error? validated = validateConfigurations(config);
         if validated is Error {
@@ -47,7 +47,7 @@ public isolated class Listener {
     }
 
     isolated function initListener(string url, ListenerConfiguration config) returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Listener",
+        'class: "io.ballerina.lib.solace.jms.listener.Listener",
         name: "init"
     } external;
 
@@ -58,9 +58,9 @@ public isolated class Listener {
     #
     # + 'service - service instance
     # + name - service name
-    # + return - `solace:Error` if an error occurs or `()` otherwise
+    # + return - `jms:Error` if an error occurs or `()` otherwise
     public isolated function attach(Service 'service, string[]|string? name = ()) returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Listener"
+        'class: "io.ballerina.lib.solace.jms.listener.Listener"
     } external;
 
     # Detaches a Solace service from the listener.
@@ -69,9 +69,9 @@ public isolated class Listener {
     # ```
     #
     # + 'service - service instance
-    # + return - `solace:Error` if an error occurs or `()` otherwise
+    # + return - `jms:Error` if an error occurs or `()` otherwise
     public isolated function detach(Service 'service) returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Listener"
+        'class: "io.ballerina.lib.solace.jms.listener.Listener"
     } external;
 
     # Starts the listener.
@@ -79,9 +79,9 @@ public isolated class Listener {
     # check messageListener.'start();
     # ```
     #
-    # + return - `solace:Error` if an error occurs or `()` otherwise
+    # + return - `jms:Error` if an error occurs or `()` otherwise
     public isolated function 'start() returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Listener"
+        'class: "io.ballerina.lib.solace.jms.listener.Listener"
     } external;
 
     # Gracefully stops the listener.
@@ -89,9 +89,9 @@ public isolated class Listener {
     # check messageListener.gracefulStop();
     # ```
     #
-    # + return - `solace:Error` if an error occurs or `()` otherwise
+    # + return - `jms:Error` if an error occurs or `()` otherwise
     public isolated function gracefulStop() returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Listener"
+        'class: "io.ballerina.lib.solace.jms.listener.Listener"
     } external;
 
     # Immediately stops the listener.
@@ -99,8 +99,8 @@ public isolated class Listener {
     # check messageListener.immediateStop();
     # ```
     #
-    # + return - `solace:Error` if an error occurs or `()` otherwise
+    # + return - `jms:Error` if an error occurs or `()` otherwise
     public isolated function immediateStop() returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Listener"
+        'class: "io.ballerina.lib.solace.jms.listener.Listener"
     } external;
 }

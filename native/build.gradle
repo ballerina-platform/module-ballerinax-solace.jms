@@ -22,7 +22,7 @@ plugins {
     id 'com.github.spotbugs'
 }
 
-description = 'Ballerina - Solace Native'
+description = 'Ballerina - Solace JMS Native'
 
 configurations {
     dist {

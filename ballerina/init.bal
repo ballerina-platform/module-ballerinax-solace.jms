@@ -21,5 +21,5 @@ function init() {
 }
 
 function setModule() = @java:Method {
-    'class: "io.ballerina.lib.solace.ModuleUtils"
+    'class: "io.ballerina.lib.solace.jms.ModuleUtils"
 } external;

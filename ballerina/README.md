@@ -15,15 +15,15 @@ Solace PubSub+ is a powerful event broker that supports multiple protocols and m
 
 ### Step 1: Import the module
 
-Import the `solace` module into the Ballerina project.
+Import the `solace.jms` module into the Ballerina project.
 
 ```ballerina
-import ballerinax/solace;
+import ballerinax/solace.jms;
 ```
 
 ### Step 2: Instantiate a new connector
 
-#### Initialize a `solace:MessageProducer`
+#### Initialize a `jms:MessageProducer`
 
 ```ballerina
 configurable string brokerUrl = ?;
@@ -32,7 +32,7 @@ configurable string queueName = ?;
 configurable string username = ?;
 configurable string password = ?;
 
-solace:MessageProducer producer = check new (brokerUrl,
+jms:MessageProducer producer = check new (brokerUrl,
     destination = {
         queueName
     },
@@ -44,7 +44,7 @@ solace:MessageProducer producer = check new (brokerUrl,
 );
 ```
 
-#### Initialize a `solace:MessageConsumer`
+#### Initialize a `jms:MessageConsumer`
 
 ```ballerina
 configurable string brokerUrl = ?;
@@ -53,7 +53,7 @@ configurable string queueName = ?;
 configurable string username = ?;
 configurable string password = ?;
 
-solace:MessageConsumer consumer = check new (brokerUrl,
+jms:MessageConsumer consumer = check new (brokerUrl,
     destination = {
         queueName
     },
@@ -80,7 +80,7 @@ check producer->send({
 #### Retrieve a message from a queue
 
 ```ballerina
-solace:Message? receivedMessage = check consumer->receive(5.0);
+jms:Message? receivedMessage = check consumer->receive(5.0);
 ```
 
 ### Step 4: Run the Ballerina application

@@ -1,6 +1,6 @@
-# Specification: Ballerina `solace` Library
+# Specification: Ballerina `solace.jms` Library
 
-_Authors_: @ayeshLK \
+_Authors_: @gayaldassanayake \
 _Reviewers_: TBA \
 _Created_: 2025/11/21 \
 _Updated_: 2025/11/23 \
@@ -8,10 +8,10 @@ _Edition_: Swan Lake
 
 ## Introduction
 
-This is the specification for the `solace` library of [Ballerina language](https://ballerina.io/), which provides the
+This is the specification for the `solace.jms` library of [Ballerina language](https://ballerina.io/), which provides the
 functionality to send and receive messages by connecting to a Solace Event Broker via JMS protocol.
 
-The `solace` library specification has evolved and may continue to evolve in the future. The released versions of the
+The `solace.jms` library specification has evolved and may continue to evolve in the future. The released versions of the
 specification can be found under the relevant GitHub tag.
 
 If you have any feedback or suggestions, you can submit a proposal as a pull request to the [ballerina-spec](https://github.com/ballerina-platform/ballerina-spec) repository under the `/beps/con-solace` directory. You can also initiate the related discussion by opening an [issue](https://github.com/ballerina-platform/ballerina-spec/issues) in the same repository. Once the proposal is reviewed and accepted, the corresponding pull request will be merged into the `ballerina-spec` repository.
@@ -46,12 +46,12 @@ The conforming implementation of the specification is released to Ballerina Cent
 
 Solace Event Broker is a high-performance event-streaming and messaging platform that enables real-time, scalable, and event-driven communication between distributed applications. This specification describes how to use JMS API based clients to connect to Solace event broker. These clients allow the writing of distributed applications and microservices that read, write, and process messages in parallel, at scale, and in a fault-tolerant manner even in the case of network problems or machine failures.
 
-Ballerina `solace` provides several core APIs:
+Ballerina `solace.jms` provides several core APIs:
 
-- **`solace:MessageProducer`**: A client endpoint for sending messages to a Solace queue or topic.
-- **`solace:MessageConsumer`**: A client endpoint for receiving messages from a Solace queue or topic.
-- **`solace:Listener`**: An endpoint that allows a Ballerina service to receive messages from a Solace queue or topic.
-- **`solace:Caller`**: A client used within a service to acknowledge messages or manage transactions.
+- **`jms:MessageProducer`**: A client endpoint for sending messages to a Solace queue or topic.
+- **`jms:MessageConsumer`**: A client endpoint for receiving messages from a Solace queue or topic.
+- **`jms:Listener`**: An endpoint that allows a Ballerina service to receive messages from a Solace queue or topic.
+- **`jms:Caller`**: A client used within a service to acknowledge messages or manage transactions.
 
 ## 2. Common configuration
 
@@ -326,14 +326,14 @@ public type Property boolean|int|byte|float|string;
 
 ## 4. Message producer
 
-The `solace:MessageProducer` is used to send messages to a Solace destination.
+The `jms:MessageProducer` is used to send messages to a Solace destination.
 
 ### 4.1 Configurations
 
 - `ProducerConfiguration` record represents the configuration for a Solace message producer.
 ```ballerina
 public type ProducerConfiguration record {|
-    *solace:CommonConnectionConfiguration;
+    *jms:CommonConnectionConfiguration;
     # The destination (Topic or Queue) where messages will be published
     Destination destination;
 |};
@@ -341,11 +341,11 @@ public type ProducerConfiguration record {|
 
 ### 4.2. Initialization
 
-- The `solace:MessageProducer` can be initialized by providing the broker URL and the `solace:ProducerConfiguration`.
+- The `jms:MessageProducer` can be initialized by providing the broker URL and the `jms:ProducerConfiguration`.
 ```ballerina
 # Initializes a new Solace message producer with the given broker URL and configuration.
 # ```
-# solace:MessageProducer producer = check new (brokerUrl, {
+# jms:MessageProducer producer = check new (brokerUrl, {
 #     destination: {queueName: "orders"},
 #     transacted: false
 # });
@@ -356,7 +356,7 @@ public type ProducerConfiguration record {|
 # Multiple hosts can be specified as a comma-separated list for failover support.
 # Default ports: 55555 (standard), 55003 (compression), 55443 (SSL)
 # + config - Producer configuration including connection settings and destination
-# + return - A `solace:Error` if initialization fails or else `()`
+# + return - A `jms:Error` if initialization fails or else `()`
 public isolated function init(string url, *ProducerConfiguration config) returns Error?;
 ```
 
@@ -370,7 +370,7 @@ public isolated function init(string url, *ProducerConfiguration config) returns
 # ```
 #
 # + message - Message to be sent to the Solace broker
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function send(Message message) returns Error?;
 ```
 
@@ -382,7 +382,7 @@ isolated remote function send(Message message) returns Error?;
 # check producer->'commit();
 # ```
 #
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function 'commit() returns Error?;
 ```
 
@@ -394,7 +394,7 @@ isolated remote function 'commit() returns Error?;
 # check producer->'rollback();
 # ```
 #
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function 'rollback() returns Error?;
 ```
 
@@ -404,13 +404,13 @@ isolated remote function 'rollback() returns Error?;
 # ```
 # check producer->close();
 # ```
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function close() returns Error?;
 ```
 
 ## 5. Message consumer
 
-The `solace:MessageConsumer` is used to receive messages from a Solace destination.
+The `jms:MessageConsumer` is used to receive messages from a Solace destination.
 
 ### 5.1 Configurations
 
@@ -450,11 +450,11 @@ public type TopicConfig record {|
 
 ### 5.2. Initialization
 
-- The `solace:MessageConsumer` can be initialized by providing the broker URL and the `solace:ConsumerConfiguration`.
+- The `jms:MessageConsumer` can be initialized by providing the broker URL and the `jms:ConsumerConfiguration`.
 ```ballerina
 # Initializes a new Solace message consumer with the given broker URL and configuration.
 # ```
-# solace:MessageConsumer consumer = check new (brokerUrl, {
+# jms:MessageConsumer consumer = check new (brokerUrl, {
 #     subscriptionConfig: {queueName: "orders"}
 # });
 # ```
@@ -464,7 +464,7 @@ public type TopicConfig record {|
 # Multiple hosts can be specified as a comma-separated list for failover support.
 # Default ports: 55555 (standard), 55003 (compression), 55443 (SSL)
 # + config - Consumer configuration including connection settings and subscription details
-# + return - A `solace:Error` if initialization fails or else `()`
+# + return - A `jms:Error` if initialization fails or else `()`
 public isolated function init(string url, *ConsumerConfiguration config) returns Error?;
 ```
 
@@ -474,12 +474,12 @@ public isolated function init(string url, *ConsumerConfiguration config) returns
 ```ballerina
 # Receives the next message from the Solace broker, waiting up to the specified timeout.
 # ```
-# solace:Message? message = check consumer->receive(5.0);
+# jms:Message? message = check consumer->receive(5.0);
 # ```
 #
 # + timeout - The maximum time to wait for a message in seconds. Default is 10.0 seconds
 # + T - Optional type description of the expected data type
-# + return - The received `Message`, `()` if no message is available within the timeout, or a `solace:Error` if there is an error
+# + return - The received `Message`, `()` if no message is available within the timeout, or a `jms:Error` if there is an error
 isolated remote function receive(decimal timeout = 10.0, typedesc<Message> T = <>) returns T|Error?;
 ```
 
@@ -487,11 +487,11 @@ isolated remote function receive(decimal timeout = 10.0, typedesc<Message> T = <
 ```ballerina
 # Receives the next message from the Solace broker if one is immediately available, without waiting.
 # ```
-# solace:Message? message = check consumer->receiveNoWait();
+# jms:Message? message = check consumer->receiveNoWait();
 # ```
 # 
 # + T - Optional type description of the expected data type
-# + return - The received `Message` if immediately available, `()` if no message is available, or a `solace:Error` if there is an error
+# + return - The received `Message` if immediately available, `()` if no message is available, or a `jms:Error` if there is an error
 isolated remote function receiveNoWait(typedesc<Message> T = <>) returns T|Error?;
 ```
 
@@ -504,7 +504,7 @@ isolated remote function receiveNoWait(typedesc<Message> T = <>) returns T|Error
 # ```
 #
 # + message - The message to acknowledge
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function acknowledge(Message message) returns Error?;
 ```
 
@@ -516,7 +516,7 @@ isolated remote function acknowledge(Message message) returns Error?;
 # check consumer->'commit();
 # ```
 #
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function 'commit() returns Error?
 ```
 
@@ -528,7 +528,7 @@ isolated remote function 'commit() returns Error?
 # check consumer->'rollback();
 # ```
 #
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function 'rollback() returns Error?;
 ```
 
@@ -539,13 +539,13 @@ isolated remote function 'rollback() returns Error?;
 # check consumer->close();
 # ```
 #
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function close() returns Error?;
 ```
 
 ## 6. Message listener
 
-The `solace:Listener` enables applications to receive messages asynchronously from a Solace event broker.
+The `jms:Listener` enables applications to receive messages asynchronously from a Solace event broker.
 
 ### 6.1 Configurations
 
@@ -558,11 +558,11 @@ public type ListenerConfiguration record {|
 
 ### 6.2. Initialization
 
-- The `solace:Listener` can be initialized by providing the broker URL and the `solace:ListenerConfiguration`.
+- The `jms:Listener` can be initialized by providing the broker URL and the `jms:ListenerConfiguration`.
 ```ballerina
 # Initializes a new Solace message listener with the given broker URL and configuration.
 # ```
-# listener solace:Listener messageListener = check new (
+# listener jms:Listener messageListener = check new (
 #     url = "smf://localhost:55554",
 #     messageVpn = "default",
 #     auth = {
@@ -577,7 +577,7 @@ public type ListenerConfiguration record {|
 # Multiple hosts can be specified as a comma-separated list for failover support.
 # Default ports: 55555 (standard), 55003 (compression), 55443 (SSL)
 # + config - configurations used when initializing the listener
-# + return - `solace:Error` if an error occurs or `()` otherwise
+# + return - `jms:Error` if an error occurs or `()` otherwise
 public isolated function init(string url, *ListenerConfiguration config) returns Error?;
 ```
 
@@ -592,7 +592,7 @@ public isolated function init(string url, *ListenerConfiguration config) returns
 #
 # + 'service - service instance
 # + name - service name
-# + return - `solace:Error` if an error occurs or `()` otherwise
+# + return - `jms:Error` if an error occurs or `()` otherwise
 public isolated function attach(Service 'service, string[]|string? name = ()) returns Error?;
 ```
 
@@ -604,7 +604,7 @@ public isolated function attach(Service 'service, string[]|string? name = ()) re
 # ```
 #
 # + 'service - service instance
-# + return - `solace:Error` if an error occurs or `()` otherwise
+# + return - `jms:Error` if an error occurs or `()` otherwise
 public isolated function detach(Service 'service) returns Error?;
 ```
 
@@ -615,7 +615,7 @@ public isolated function detach(Service 'service) returns Error?;
 # check messageListener.'start();
 # ```
 #
-# + return - `solace:Error` if an error occurs or `()` otherwise
+# + return - `jms:Error` if an error occurs or `()` otherwise
 public isolated function 'start() returns Error?;
 ```
 
@@ -626,7 +626,7 @@ public isolated function 'start() returns Error?;
 # check messageListener.gracefulStop();
 # ```
 #
-# + return - `solace:Error` if an error occurs or `()` otherwise
+# + return - `jms:Error` if an error occurs or `()` otherwise
 public isolated function gracefulStop() returns Error?;
 ```
 
@@ -637,13 +637,13 @@ public isolated function gracefulStop() returns Error?;
 # check messageListener.immediateStop();
 # ```
 #
-# + return - `solace:Error` if an error occurs or `()` otherwise
+# + return - `jms:Error` if an error occurs or `()` otherwise
 public isolated function immediateStop() returns Error?;
 ```
 
 ### 6.4. Service
 
-A Solace service in Ballerina is used to receive messages from a Solace. It is attached to a `solace:Listener` and bound to a specific Solace destination, which can be either a **queue** or a **topic**.
+A Solace service in Ballerina is used to receive messages from a Solace. It is attached to a `jms:Listener` and bound to a specific Solace destination, which can be either a **queue** or a **topic**.
 
 #### 6.4.1. Configuration
 
@@ -689,23 +689,23 @@ public type TopicServiceConfig record {|
 # Invoked when a message is received at a subscribed Solace destination.
 #
 # + message - Received Solace message
-# + caller - Optional `solace:Caller` to control transactions and message acknowledgement
+# + caller - Optional `jms:Caller` to control transactions and message acknowledgement
 # + return - A `error` if there is an error during message processing or else `()`
-remote function onMessage(solace:Message message, solace:Caller caller) returns error?;
+remote function onMessage(jms:Message message, jms:Caller caller) returns error?;
 ```
 
-- To handle runtime errors that occur while dispatching a message to the `onMessage` function, use the `onError` function. `onError` is an optional API, if the user does not define a `onError` function on the `solace:Service` the identified error will be logged into the console.
+- To handle runtime errors that occur while dispatching a message to the `onMessage` function, use the `onError` function. `onError` is an optional API, if the user does not define a `onError` function on the `jms:Service` the identified error will be logged into the console.
 ```ballerina
 # Invoked when a runtime error occurs during message while dispatching a message to the `onMessage` method.
 #
-# + err - The `solace:Error` containing details of the error encountered
+# + err - The `jms:Error` containing details of the error encountered
 # + return - A `error` if an error occurs while handling the error, or else `()`
-remote function onError(solace:Error err) returns error?;
+remote function onError(jms:Error err) returns error?;
 ```
 
 ### 6.5. Caller
 
-The `solace:Caller` is used inside a `solace:Service` to acknowledge a message or to handle transactions.
+The `jms:Caller` is used inside a `jms:Service` to acknowledge a message or to handle transactions.
 
 #### 6.5.1. Functions
 
@@ -717,8 +717,8 @@ The `solace:Caller` is used inside a `solace:Service` to acknowledge a message o
 # ```
 #
 # + message - Solace message record
-# + return - `solace:Error` if there is an error in the execution or else '()'
-isolated remote function acknowledge(solace:Message message) returns Error?;
+# + return - `jms:Error` if there is an error in the execution or else '()'
+isolated remote function acknowledge(jms:Message message) returns Error?;
 ```
 
 - To commit all the messages received in this transaction and release any locks currently held, use the `commit` function.
@@ -728,7 +728,7 @@ isolated remote function acknowledge(solace:Message message) returns Error?;
 # check caller->'commit();
 # ```
 #
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function 'commit() returns Error?;
 ```
 
@@ -739,19 +739,19 @@ isolated remote function 'commit() returns Error?;
 # check caller->'rollback();
 # ```
 #
-# + return - A `solace:Error` if there is an error or else `()`
+# + return - A `jms:Error` if there is an error or else `()`
 isolated remote function 'rollback() returns Error?;
 ```
 
 ### 6.6. Usage
 
-After initializing the `solace:Listener` a `solace:Service` must be attached to it.
+After initializing the `jms:Listener` a `jms:Service` must be attached to it.
 ```ballerina
-@solace:ServiceConfig {
+@jms:ServiceConfig {
    queueName: "MyQueue"
 }
 service on messageListener {
-    remote function onMessage(solace:Message message, solace:Caller caller) returns error? {
+    remote function onMessage(jms:Message message, jms:Caller caller) returns error? {
         // process results
     }
 }

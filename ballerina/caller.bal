@@ -22,9 +22,9 @@ public isolated client class Caller {
     # Mark a Solace message as received.
     #
     # + message - Solace message record
-    # + return - `solace:Error` if there is an error in the execution or else '()'
+    # + return - `jms:Error` if there is an error in the execution or else '()'
     isolated remote function acknowledge(Message message) returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Caller"
+        'class: "io.ballerina.lib.solace.jms.listener.Caller"
     } external;
 
     # Commits all messages received in this transaction and releases any locks currently held.
@@ -32,9 +32,9 @@ public isolated client class Caller {
     # check session->'commit();
     # ```
     #
-    # + return - A `solace:Error` if there is an error or else `()`
+    # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'commit() returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Caller"
+        'class: "io.ballerina.lib.solace.jms.listener.Caller"
     } external;
 
     # Rolls back any messages received in this transaction and releases any locks currently held.
@@ -42,8 +42,8 @@ public isolated client class Caller {
     # check session->'rollback();
     # ```
     #
-    # + return - A `solace:Error` if there is an error or else `()`
+    # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'rollback() returns Error? = @java:Method {
-        'class: "io.ballerina.lib.solace.listener.Caller"
+        'class: "io.ballerina.lib.solace.jms.listener.Caller"
     } external;
 }

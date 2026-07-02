@@ -138,7 +138,7 @@ isolated function testSvcMethodWithInvalidParams() returns error? {
     if result is Error {
         test:assertEquals(
                 result.message(),
-                "Failed to attach service to listener: onMessage method parameters must be of type 'solace:Message' (or its subtype) or 'solace:Caller'.",
+                "Failed to attach service to listener: onMessage method parameters must be of type 'solace.jms:Message' (or its subtype) or 'solace.jms:Caller'.",
                 "Invalid error message received");
     }
 }
@@ -160,7 +160,7 @@ isolated function testSvcMethodMandatoryParamMissing() returns error? {
     if result is Error {
         test:assertEquals(
                 result.message(),
-                "Failed to attach service to listener: Required parameter 'solace:Message' can not be found.",
+                "Failed to attach service to listener: Required parameter 'solace.jms:Message' can not be found.",
                 "Invalid error message received");
     }
 }
@@ -185,7 +185,7 @@ isolated function testSvcOnErrorWithoutParameters() returns error? {
     if result is Error {
         test:assertEquals(
                 result.message(),
-                "Failed to attach service to listener: onError method must have exactly one parameter of type 'solace:Error'.",
+                "Failed to attach service to listener: onError method must have exactly one parameter of type 'solace.jms:Error'.",
                 "Invalid error message received");
     }
 }
@@ -210,7 +210,7 @@ isolated function testSvcOnErrorWithInvalidParameter() returns error? {
     if result is Error {
         test:assertEquals(
                 result.message(),
-                "Failed to attach service to listener: onError method parameter must be of type 'solace:Error'.",
+                "Failed to attach service to listener: onError method parameter must be of type 'solace.jms:Error'.",
                 "Invalid error message received");
     }
 }
@@ -235,7 +235,7 @@ isolated function testSvcOnErrorWithAdditionalParameters() returns error? {
     if result is Error {
         test:assertEquals(
                 result.message(),
-                "Failed to attach service to listener: onError method must have exactly one parameter of type 'solace:Error'.",
+                "Failed to attach service to listener: onError method must have exactly one parameter of type 'solace.jms:Error'.",
                 "Invalid error message received");
     }
 }

@@ -14,10 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Checks whether a given type is a subtype of `solace:Message`.
+# Checks whether a given type is a subtype of `jms:Message`.
 #
-# + typeDesc - The type needed to be checked as a subtype of `solace:Message`
-# + return - True if the type is a subtype of `solace:Message`, else false
+# + typeDesc - The type needed to be checked as a subtype of `jms:Message`
+# + return - True if the type is a subtype of `jms:Message`, else false
 isolated function isSolaceMessage(typedesc<anydata> typeDesc) returns boolean {
     if typeDesc is typedesc<Message> {
         return true;
