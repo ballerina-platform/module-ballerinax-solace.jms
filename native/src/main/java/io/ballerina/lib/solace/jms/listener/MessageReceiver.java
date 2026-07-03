@@ -67,14 +67,21 @@ public class MessageReceiver implements MessageListener {
         this.consumer.setMessageListener(this);
     }
 
-    public void stop() throws JMSException {
+    public void stop() {
         closed.set(true);
-        // consumer.close() blocks until any in-progress onMessage() call returns (JMS spec 4.5.2).
-        // Bound that wait the same way the previous poll-loop shutdown did, so a stuck Ballerina
-        // onMessage/onError handler cannot hang gracefulStop()/immediateStop() indefinitely.
+        // consumer.close() and session.close() both block until any in-progress onMessage() call
+        // returns (JMS spec 4.5.2 / 4.3.2). Run both on the same bounded daemon thread so a stuck
+        // Ballerina onMessage/onError handler cannot hang gracefulStop()/immediateStop()
+        // indefinitely -- closing only the consumer on this thread would still leave session.close()
+        // to block the caller directly.
         Thread closer = new Thread(() -> {
             try {
                 this.consumer.close();
+            } catch (JMSException e) {
+                // Best-effort close.
+            }
+            try {
+                this.session.close();
             } catch (JMSException e) {
                 // Best-effort close.
             }
@@ -86,6 +93,5 @@ public class MessageReceiver implements MessageListener {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        this.session.close();
     }
 }
