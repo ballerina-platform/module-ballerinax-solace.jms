@@ -529,3 +529,93 @@ isolated function testSendMessageWithDefaultDeliveryModeAndPriority() returns er
     }
     check consumer->close();
 }
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithReplyToQueue() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_REPLY_TO_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT,
+        replyTo: {queueName: PRODUCER_REPLY_TO_DESTINATION_QUEUE}
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_REPLY_TO_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with replyTo queue set");
+    if receivedMessage is Message {
+        Destination? replyTo = receivedMessage.replyTo;
+        test:assertTrue(replyTo is Queue, "replyTo should be resolved as a Queue");
+        if replyTo is Queue {
+            test:assertEquals(replyTo.queueName, PRODUCER_REPLY_TO_DESTINATION_QUEUE);
+        }
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithReplyToTopic() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_REPLY_TO_TOPIC_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT,
+        replyTo: {topicName: PRODUCER_REPLY_TO_DESTINATION_TOPIC}
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_REPLY_TO_TOPIC_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with replyTo topic set");
+    if receivedMessage is Message {
+        Destination? replyTo = receivedMessage.replyTo;
+        test:assertTrue(replyTo is Topic, "replyTo should be resolved as a Topic");
+        if replyTo is Topic {
+            test:assertEquals(replyTo.topicName, PRODUCER_REPLY_TO_DESTINATION_TOPIC);
+        }
+    }
+    check consumer->close();
+}

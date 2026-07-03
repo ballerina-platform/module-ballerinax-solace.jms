@@ -39,6 +39,7 @@ public final class MessageConverter {
     private static final BString PROPERTIES = StringUtils.fromString("properties");
     private static final BString CORRELATION_ID = StringUtils.fromString("correlationId");
     private static final BString JMS_TYPE = StringUtils.fromString("jmsType");
+    private static final BString REPLY_TO = StringUtils.fromString("replyTo");
     private static final BString DELIVERY_MODE = StringUtils.fromString("deliveryMode");
     private static final BString PRIORITY = StringUtils.fromString("priority");
 
@@ -77,6 +78,16 @@ public final class MessageConverter {
             Object properties = bMessage.get(PROPERTIES);
             if (properties instanceof BMap<?, ?> propsMap) {
                 setMessageProperties(jmsMessage, (BMap<BString, Object>) propsMap);
+            }
+        }
+
+        // Set reply-to destination if present
+        if (bMessage.containsKey(REPLY_TO)) {
+            Object replyTo = bMessage.get(REPLY_TO);
+            if (replyTo instanceof BMap<?, ?> replyToMap) {
+                Destination replyToDestination =
+                        ProducerConfiguration.getDestination((BMap<BString, Object>) replyToMap);
+                jmsMessage.setJMSReplyTo(Actions.createDestination(session, replyToDestination));
             }
         }
 

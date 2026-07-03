@@ -162,13 +162,16 @@ public final class MessageConverter {
     }
 
     private static BMap<BString, Object> convertDestination(Destination destination) throws JMSException {
-        BMap<BString, Object> destMap = createMapValue();
         if (destination instanceof Queue queue) {
-            destMap.put(QUEUE_NAME, StringUtils.fromString(queue.getQueueName()));
+            BMap<BString, Object> queueRecord = ValueCreator.createRecordValue(ModuleUtils.getModule(), "Queue");
+            queueRecord.put(QUEUE_NAME, StringUtils.fromString(queue.getQueueName()));
+            return queueRecord;
         } else if (destination instanceof Topic topic) {
-            destMap.put(TOPIC_NAME, StringUtils.fromString(topic.getTopicName()));
+            BMap<BString, Object> topicRecord = ValueCreator.createRecordValue(ModuleUtils.getModule(), "Topic");
+            topicRecord.put(TOPIC_NAME, StringUtils.fromString(topic.getTopicName()));
+            return topicRecord;
         }
-        return destMap;
+        return createMapValue();
     }
 
     private static BMap<BString, Object> extractProperties(Message message) throws JMSException {

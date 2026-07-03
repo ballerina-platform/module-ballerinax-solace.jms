@@ -233,8 +233,8 @@ public final class Actions {
         }
     }
 
-    private static Destination createDestination(Session session,
-                                                io.ballerina.lib.solace.jms.producer.Destination destination)
+    static Destination createDestination(Session session,
+                                          io.ballerina.lib.solace.jms.producer.Destination destination)
             throws JMSException {
         if (destination instanceof Topic topic) {
             return session.createTopic(topic.topicName());

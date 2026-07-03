@@ -69,6 +69,10 @@ const string DATABINDING_QUEUE = "client-databinding-queue";
 const string DATABINDING_TOPIC = "client-databinding-topic";
 const string SERVICE_DATABINDING_QUEUE = "service-databinding-queue";
 
-// Producer delivery mode / priority tests
+// Producer delivery mode / priority / reply-to tests
 const string PRODUCER_DELIVERY_MODE_QUEUE = "producer-delivery-mode-queue";
 const string PRODUCER_DEFAULT_DELIVERY_MODE_QUEUE = "producer-default-delivery-mode-queue";
+const string PRODUCER_REPLY_TO_QUEUE = "producer-reply-to-queue";
+const string PRODUCER_REPLY_TO_DESTINATION_QUEUE = "producer-reply-to-destination-queue";
+const string PRODUCER_REPLY_TO_TOPIC_QUEUE = "producer-reply-to-topic-queue";
+const string PRODUCER_REPLY_TO_DESTINATION_TOPIC = "test/producer/reply-to-topic";
