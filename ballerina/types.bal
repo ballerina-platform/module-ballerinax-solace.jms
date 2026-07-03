@@ -86,13 +86,8 @@ public type TopicConfig record {|
 |};
 
 # Common configurations related to the Solace service configuration related to queue or topic subscription.
-#
-# + pollingInterval - The polling interval in seconds
-# + receiveTimeout - The timeout to wait till a `receive` action finishes when there are no messages
 type CommonServiceConfig record {|
     *CommonSubscriptionConfig;
-    decimal pollingInterval = 10;
-    decimal receiveTimeout = 10.0;
 |};
 
 # Represents configurations for a service configurations related to solace queue subscription.

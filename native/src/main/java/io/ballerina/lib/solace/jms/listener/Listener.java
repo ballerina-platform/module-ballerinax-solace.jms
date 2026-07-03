@@ -84,8 +84,7 @@ public class Listener {
             Session session = connection.createSession(transacted, sessionAckMode);
             MessageConsumer consumer = ListenerUtils.createConsumer(session, svcConfig);
             MessageDispatcher messageDispatcher = new MessageDispatcher(env.getRuntime(), nativeService, session);
-            MessageReceiver receiver = new MessageReceiver(
-                    session, consumer, messageDispatcher, svcConfig.pollingInterval(), svcConfig.receiveTimeout());
+            MessageReceiver receiver = new MessageReceiver(session, consumer, messageDispatcher);
             bService.addNativeData(NATIVE_SERVICE, nativeService);
             bService.addNativeData(NATIVE_RECEIVER, receiver);
             List<BObject> serviceList = (List<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);

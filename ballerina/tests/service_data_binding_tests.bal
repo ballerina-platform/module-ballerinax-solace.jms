@@ -62,9 +62,7 @@ isolated function testServiceStringDatabinding() returns error? {
     string testPayload = "Service test message";
 
     Service stringService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; string payload;|} message) returns error? {
             lock {
@@ -75,7 +73,7 @@ isolated function testServiceStringDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(stringService, "string-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedStringPayload, testPayload, "String payload not received correctly by service");
@@ -88,9 +86,7 @@ isolated function testServiceIntDatabinding() returns error? {
     int testPayload = 42;
 
     Service intService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; int payload;|} message) returns error? {
             lock {
@@ -101,7 +97,7 @@ isolated function testServiceIntDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(intService, "int-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedIntPayload, testPayload, "Int payload not received correctly by service");
@@ -114,9 +110,7 @@ isolated function testServiceFloatDatabinding() returns error? {
     float testPayload = 3.14159;
 
     Service floatService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; float payload;|} message) returns error? {
             lock {
@@ -127,7 +121,7 @@ isolated function testServiceFloatDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(floatService, "float-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedFloatPayload, testPayload, "Float payload not received correctly by service");
@@ -140,9 +134,7 @@ isolated function testServiceDecimalDatabinding() returns error? {
     decimal testPayload = 99.99d;
 
     Service decimalService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; decimal payload;|} message) returns error? {
             lock {
@@ -153,7 +145,7 @@ isolated function testServiceDecimalDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(decimalService, "decimal-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedDecimalPayload, testPayload, "Decimal payload not received correctly by service");
@@ -166,9 +158,7 @@ isolated function testServiceBooleanDatabinding() returns error? {
     boolean testPayload = true;
 
     Service booleanService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; boolean payload;|} message) returns error? {
             lock {
@@ -179,7 +169,7 @@ isolated function testServiceBooleanDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(booleanService, "boolean-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedBooleanPayload, testPayload, "Boolean payload not received correctly by service");
@@ -192,9 +182,7 @@ isolated function testServiceByteArrayDatabinding() returns error? {
     byte[] testPayload = [72, 101, 108, 108, 111]; // "Hello"
 
     Service byteArrayService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; byte[] payload;|} message) returns error? {
             lock {
@@ -205,7 +193,7 @@ isolated function testServiceByteArrayDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(byteArrayService, "bytearray-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedByteArrayPayload, testPayload.cloneReadOnly(), "Byte array payload not received correctly by service");
@@ -218,9 +206,7 @@ isolated function testServiceXmlDatabinding() returns error? {
     xml testPayload = xml `<order><id>12345</id><item>Widget</item></order>`;
 
     Service xmlService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; xml payload;|} message) returns error? {
             lock {
@@ -231,7 +217,7 @@ isolated function testServiceXmlDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(xmlService, "xml-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedXmlPayload, testPayload.cloneReadOnly(), "XML payload not received correctly by service");
@@ -244,9 +230,7 @@ isolated function testServiceJsonDatabinding() returns error? {
     json testPayload = {name: "Alice", age: 30, city: "New York"};
 
     Service jsonService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; json payload;|} message) returns error? {
             lock {
@@ -257,7 +241,7 @@ isolated function testServiceJsonDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(jsonService, "json-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedJsonPayload, testPayload.cloneReadOnly(), "JSON payload not received correctly by service");
@@ -274,9 +258,7 @@ isolated function testServiceRecordDatabinding() returns error? {
     };
 
     Service recordService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|
                     *Message;
@@ -290,7 +272,7 @@ isolated function testServiceRecordDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(recordService, "record-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedRecordPayload, testPayload.cloneReadOnly(), "Record payload not received correctly by service");
@@ -307,9 +289,7 @@ isolated function testServiceMapDatabinding() returns error? {
     };
 
     Service mapService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; map<Value> payload;|} message) returns error? {
             lock {
@@ -320,7 +300,7 @@ isolated function testServiceMapDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(mapService, "map-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(receivedMapPayload, testPayload.cloneReadOnly(), "Map payload not received correctly by service");
@@ -336,9 +316,7 @@ isolated function testServiceDataBindingWithCaller() returns error? {
 
     Service callerService = @ServiceConfig {
         queueName: "service-databinding-queue",
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
-        pollingInterval: 1,
-        receiveTimeout: 1
+        sessionAckMode: CLIENT_ACKNOWLEDGE
     } service object {
         remote function onMessage(record {|*Message; string payload;|} message, Caller caller) returns error? {
             lock {
@@ -350,7 +328,7 @@ isolated function testServiceDataBindingWithCaller() returns error? {
 
     check serviceDataBindingListener.attach(callerService, "caller-databinding-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(callerReceivedPayload, testPayload, "Payload with caller not received correctly");
@@ -383,9 +361,7 @@ isolated function testServiceNestedRecordDatabinding() returns error? {
     };
 
     Service nestedRecordService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|
                     *Message;
@@ -405,7 +381,7 @@ isolated function testServiceNestedRecordDatabinding() returns error? {
 
     check serviceDataBindingListener.attach(nestedRecordService, "nested-record-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(nestedRecordReceived, testPayload.cloneReadOnly(), "Nested record not received correctly");
@@ -418,9 +394,7 @@ isolated function testServiceTypeMismatchIntToString() returns error? {
     int testPayload = 123;
 
     Service mismatchService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; string payload;|} message) returns error? {
             lock {
@@ -437,7 +411,7 @@ isolated function testServiceTypeMismatchIntToString() returns error? {
 
     check serviceDataBindingListener.attach(mismatchService, "mismatch-int-string-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertTrue(serviceDataBindingErrorState.hasError, "Service should have received a data binding error");
@@ -452,9 +426,7 @@ isolated function testServiceTypeMismatchStringToInt() returns error? {
     string testPayload = "not a number";
 
     Service mismatchService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; int payload;|} message) returns error? {
             lock {
@@ -471,7 +443,7 @@ isolated function testServiceTypeMismatchStringToInt() returns error? {
 
     check serviceDataBindingListener.attach(mismatchService, "mismatch-string-int-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertTrue(serviceDataBindingErrorState.hasError, "Service should have received a data binding error");
@@ -489,9 +461,7 @@ isolated function testServiceInvalidRecordStructure() returns error? {
     };
 
     Service invalidStructService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|
                     *Message;
@@ -508,7 +478,7 @@ isolated function testServiceInvalidRecordStructure() returns error? {
 
     check serviceDataBindingListener.attach(invalidStructService, "invalid-struct-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertTrue(serviceDataBindingErrorState.hasError, "Service should have received a data binding error");
@@ -526,9 +496,7 @@ isolated function testServiceInvalidRecordStructure() returns error? {
 //     string serviceDataBindingErrorMsg = "";
 
 //     Service xmlToRecordService = @ServiceConfig {
-//         queueName: "service-databinding-queue",
-//         pollingInterval: 1,
-//         receiveTimeout: 1
+//         queueName: "service-databinding-queue"
 //     } service object {
 //         remote function onMessage(record {|
 //                     *Message;
@@ -558,9 +526,7 @@ isolated function testServiceEmptyString() returns error? {
     string testPayload = "";
 
     Service emptyStringService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; string payload;|} message) returns error? {
             lock {
@@ -571,7 +537,7 @@ isolated function testServiceEmptyString() returns error? {
 
     check serviceDataBindingListener.attach(emptyStringService, "empty-string-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(emptyStringReceived, testPayload, "Empty string not handled correctly");
@@ -586,9 +552,7 @@ isolated function testServiceEmptyJson() returns error? {
     json testPayload = {};
 
     Service emptyJsonService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; json payload;|} message) returns error? {
             lock {
@@ -599,7 +563,7 @@ isolated function testServiceEmptyJson() returns error? {
 
     check serviceDataBindingListener.attach(emptyJsonService, "empty-json-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(emptyJsonReceived, testPayload.cloneReadOnly(), "Empty JSON not handled correctly");
@@ -614,9 +578,7 @@ isolated function testServiceUnicodeString() returns error? {
     string testPayload = "Unicode: 你好 مرحبا 🚀";
 
     Service unicodeService = @ServiceConfig {
-        queueName: "service-databinding-queue",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        queueName: "service-databinding-queue"
     } service object {
         remote function onMessage(record {|*Message; string payload;|} message) returns error? {
             lock {
@@ -627,7 +589,7 @@ isolated function testServiceUnicodeString() returns error? {
 
     check serviceDataBindingListener.attach(unicodeService, "unicode-service");
     check serviceDataBindingProducer->send({payload: testPayload});
-    runtime:sleep(2);
+    runtime:sleep(1);
 
     lock {
         test:assertEquals(unicodeStringReceived, testPayload, "Unicode string not handled correctly");
