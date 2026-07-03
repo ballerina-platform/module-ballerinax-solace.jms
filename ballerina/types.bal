@@ -28,8 +28,8 @@ public enum AcknowledgementMode {
     # either when the session has successfully returned from a call to `receive` or when 
     # the message listener the session has called to process the message successfully returns.
     AUTO_ACKNOWLEDGE = "AUTO_ACKNOWLEDGE",
-    # Indicates that the client acknowledges a consumed message by calling the 
-    # MessageConsumer's or Caller's `acknowledge` method. Acknowledging a consumed message 
+    # Indicates that the client acknowledges a consumed message by calling the
+    # MessageConsumer's or Caller's `ack` method. Acknowledging a consumed message
     # acknowledges all messages that the session has consumed.
     CLIENT_ACKNOWLEDGE = "CLIENT_ACKNOWLEDGE",
     # Indicates that the session to lazily acknowledge the delivery of messages. 

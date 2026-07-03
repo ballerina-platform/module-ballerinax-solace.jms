@@ -322,7 +322,7 @@ isolated function testServiceDataBindingWithCaller() returns error? {
             lock {
                 callerReceivedPayload = message.payload;
             }
-            check caller->acknowledge(message);
+            check caller->ack(message);
         }
     };
 

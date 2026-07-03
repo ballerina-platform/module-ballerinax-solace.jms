@@ -112,7 +112,7 @@ isolated function testServiceWithCaller() returns error? {
             lock {
                 serviceWithCallerReceivedMsgCount += 1;
             }
-            check caller->acknowledge(message);
+            check caller->ack(message);
         }
     };
     check solaceListener.attach(consumerSvc, "test-caller-svc");

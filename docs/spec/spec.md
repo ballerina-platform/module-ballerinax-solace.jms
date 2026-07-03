@@ -246,7 +246,7 @@ public enum AcknowledgementMode {
     # the message listener the session has called to process the message successfully returns.
     AUTO_ACKNOWLEDGE = "AUTO_ACKNOWLEDGE",
     # Indicates that the client acknowledges a consumed message by calling the 
-    # MessageConsumer's or Caller's `acknowledge` method. Acknowledging a consumed message 
+    # MessageConsumer's or Caller's `ack` method. Acknowledging a consumed message 
     # acknowledges all messages that the session has consumed.
     CLIENT_ACKNOWLEDGE = "CLIENT_ACKNOWLEDGE",
     # Indicates that the session to lazily acknowledge the delivery of messages. 
@@ -495,17 +495,17 @@ isolated remote function receive(decimal timeout = 10.0, typedesc<Message> T = <
 isolated remote function receiveNoWait(typedesc<Message> T = <>) returns T|Error?;
 ```
 
-- To acknowledges the specified message, use the `acknowledge` function.
+- To acknowledges the specified message, use the `ack` function.
 ```ballerina
 # Acknowledges the specified message. This method should only be called when the consumer is configured
 # with `sessionAckMode: CLIENT_ACKNOWLEDGE`.
 # ```
-# check consumer->acknowledge(message);
+# check consumer->ack(message);
 # ```
 #
 # + message - The message to acknowledge
 # + return - A `jms:Error` if there is an error or else `()`
-isolated remote function acknowledge(Message message) returns Error?;
+isolated remote function ack(Message message) returns Error?;
 ```
 
 - To commit all messages received in this transaction and releases any locks currently held, use the `commit` function.
@@ -709,16 +709,16 @@ The `jms:Caller` is used inside a `jms:Service` to acknowledge a message or to h
 
 #### 6.5.1. Functions
 
-- To mark a Solace message as received, use the `acknowledge` function.
+- To mark a Solace message as received, use the `ack` function.
 ```ballerina
 # Mark a Solace message as received.
 # ```
-# check caller->acknowledge(message);
+# check caller->ack(message);
 # ```
 #
 # + message - Solace message record
 # + return - `jms:Error` if there is an error in the execution or else '()'
-isolated remote function acknowledge(jms:Message message) returns Error?;
+isolated remote function ack(jms:Message message) returns Error?;
 ```
 
 - To commit all the messages received in this transaction and release any locks currently held, use the `commit` function.

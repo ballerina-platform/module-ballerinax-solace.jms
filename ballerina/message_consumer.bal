@@ -72,12 +72,12 @@ public isolated client class MessageConsumer {
     # Acknowledges the specified message. This method should only be called when the consumer is configured
     # with `sessionAckMode: CLIENT_ACKNOWLEDGE`.
     # ```ballerina
-    # check consumer->acknowledge(message);
+    # check consumer->ack(message);
     # ```
     #
     # + message - The message to acknowledge
     # + return - A `jms:Error` if there is an error or else `()`
-    isolated remote function acknowledge(Message message) returns Error? = @java:Method {
+    isolated remote function ack(Message message) returns Error? = @java:Method {
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
