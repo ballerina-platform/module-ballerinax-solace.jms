@@ -69,11 +69,6 @@ public class MessageReceiver implements MessageListener {
 
     public void stop() {
         closed.set(true);
-        // consumer.close() and session.close() both block until any in-progress onMessage() call
-        // returns (JMS spec 4.5.2 / 4.3.2). Run both on the same bounded daemon thread so a stuck
-        // Ballerina onMessage/onError handler cannot hang gracefulStop()/immediateStop()
-        // indefinitely -- closing only the consumer on this thread would still leave session.close()
-        // to block the caller directly.
         Thread closer = new Thread(() -> {
             try {
                 this.consumer.close();
