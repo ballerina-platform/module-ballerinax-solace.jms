@@ -443,3 +443,89 @@ isolated function testSendXmlMessage() returns error? {
     check producer->send(message);
     check producer->close();
 }
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithDeliveryModeAndPriority() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_DELIVERY_MODE_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT,
+        deliveryMode: 1,
+        priority: 7
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_DELIVERY_MODE_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with delivery mode and priority set");
+    if receivedMessage is Message {
+        test:assertEquals(receivedMessage.deliveryMode, 1, "Delivery mode should be overridden to non-persistent");
+        test:assertEquals(receivedMessage.priority, 7, "Priority should be overridden to 7");
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithDefaultDeliveryModeAndPriority() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_DEFAULT_DELIVERY_MODE_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_DEFAULT_DELIVERY_MODE_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with default delivery mode and priority");
+    if receivedMessage is Message {
+        // Falls back to the producer's own defaults (see MessageConverter.resolveDeliveryMode/resolvePriority)
+        // rather than any value hardcoded in this test.
+        test:assertTrue(receivedMessage?.deliveryMode is int, "Delivery mode should be populated by the provider");
+        test:assertTrue(receivedMessage?.priority is int, "Priority should be populated by the provider");
+    }
+    check consumer->close();
+}

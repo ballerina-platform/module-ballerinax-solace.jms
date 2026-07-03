@@ -132,7 +132,9 @@ public final class Actions {
         Thread.startVirtualThread(() -> {
             try {
                 Message message = MessageConverter.toJmsMessage(nativeSession, bMessage);
-                nativeProducer.send(message);
+                int deliveryMode = MessageConverter.resolveDeliveryMode(bMessage, nativeProducer.getDeliveryMode());
+                int priority = MessageConverter.resolvePriority(bMessage, nativeProducer.getPriority());
+                nativeProducer.send(message, deliveryMode, priority, nativeProducer.getTimeToLive());
                 future.complete(null);
             } catch (JMSException exception) {
                 future.complete(CommonUtils.createError(

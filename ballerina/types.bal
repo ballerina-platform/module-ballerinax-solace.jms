@@ -367,7 +367,7 @@ public type Message record {|
     int timestamp?;
     # JMS destination of this message (Only set by the JMS provider)
     Destination destination?;
-    # Delivery mode of this message (Only set by the JMS provider)
+    # Delivery mode for the message (`1` = non-persistent, `2` = persistent)
     int deliveryMode?;
     # Indication of whether this message is being redelivered (Only set by the JMS provider)
     boolean redelivered?;
@@ -375,7 +375,7 @@ public type Message record {|
     string jmsType?;
     # Message expiration time (Only set by the JMS provider)
     int expiration?;
-    # Message priority level (Only set by the JMS provider)
+    # Priority level for the message (0-9, where 9 is the highest)
     int priority?;
 |};
 

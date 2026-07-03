@@ -39,6 +39,8 @@ public final class MessageConverter {
     private static final BString PROPERTIES = StringUtils.fromString("properties");
     private static final BString CORRELATION_ID = StringUtils.fromString("correlationId");
     private static final BString JMS_TYPE = StringUtils.fromString("jmsType");
+    private static final BString DELIVERY_MODE = StringUtils.fromString("deliveryMode");
+    private static final BString PRIORITY = StringUtils.fromString("priority");
 
     private MessageConverter() {}
 
@@ -79,6 +81,34 @@ public final class MessageConverter {
         }
 
         return jmsMessage;
+    }
+
+    /**
+     * Resolves the delivery mode to use for a send operation.
+     *
+     * @param bMessage             Ballerina message map
+     * @param defaultDeliveryMode  delivery mode to fall back to when not set on the message
+     * @return the delivery mode set on the message, or {@code defaultDeliveryMode} if absent
+     */
+    static int resolveDeliveryMode(BMap<BString, Object> bMessage, int defaultDeliveryMode) {
+        if (bMessage.containsKey(DELIVERY_MODE) && bMessage.get(DELIVERY_MODE) instanceof Long deliveryMode) {
+            return deliveryMode.intValue();
+        }
+        return defaultDeliveryMode;
+    }
+
+    /**
+     * Resolves the priority to use for a send operation.
+     *
+     * @param bMessage        Ballerina message map
+     * @param defaultPriority priority to fall back to when not set on the message
+     * @return the priority set on the message, or {@code defaultPriority} if absent
+     */
+    static int resolvePriority(BMap<BString, Object> bMessage, int defaultPriority) {
+        if (bMessage.containsKey(PRIORITY) && bMessage.get(PRIORITY) instanceof Long priority) {
+            return priority.intValue();
+        }
+        return defaultPriority;
     }
 
     private static Message createMessageByContentType(Session session, Object content) throws JMSException {
