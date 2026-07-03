@@ -488,40 +488,41 @@ isolated function testServiceInvalidRecordStructure() returns error? {
     check serviceDataBindingListener.detach(invalidStructService);
 }
 
-// @test:Config {groups: ["serviceDataBinding", "serviceNegative", "failingTest"], dependsOn: [testServiceInvalidRecordStructure]}
-// isolated function testServiceXmlToRecordMismatch() returns error? {
-//     xml testPayload = xml `<person><name>John</name><age>30</age></person>`;
+@test:Config {groups: ["serviceDataBinding", "serviceNegative"], dependsOn: [testServiceInvalidRecordStructure]}
+isolated function testServiceXmlToRecordMismatch() returns error? {
+    xml testPayload = xml `<person><name>John</name><age>30</age></person>`;
 
-//     boolean serviceDataBindingError = false;
-//     string serviceDataBindingErrorMsg = "";
+    Service xmlToRecordService = @ServiceConfig {
+        queueName: "service-databinding-queue"
+    } service object {
+        remote function onMessage(record {|
+                    *Message;
+                    record {string name; int age;} payload;
+                |} message) returns error? {
+        }
 
-//     Service xmlToRecordService = @ServiceConfig {
-//         queueName: "service-databinding-queue"
-//     } service object {
-//         remote function onMessage(record {|
-//                     *Message;
-//                     record {string name; int age;} payload;
-//                 |} message) returns error? {
-//         }
+        remote function onError(Error err) {
+            lock {
+                serviceDataBindingErrorState = {hasError: true, errorMsg: err.message()};
+            }
+        }
+    };
 
-//         remote function onError(Error err) {
-//             serviceDataBindingError = true;
-//             serviceDataBindingErrorMsg = err.message();
-//         }
-//     };
+    check serviceDataBindingListener.attach(xmlToRecordService, "xml-record-mismatch-service");
+    check serviceDataBindingProducer->send({payload: testPayload});
+    runtime:sleep(1);
 
-//     check serviceDataBindingListener.attach(xmlToRecordService, "xml-record-mismatch-service");
-//     check serviceDataBindingProducer->send({payload: testPayload});
-//     runtime:sleep(2);
-
-//     test:assertTrue(serviceDataBindingError, "Service should have received a data binding error");
-//     test:assertTrue(serviceDataBindingErrorMsg.length() > 0, "Error message should not be empty");
-//     check serviceDataBindingListener.detach(xmlToRecordService);
-// }
+    lock {
+        test:assertTrue(serviceDataBindingErrorState.hasError, "Service should have received a data binding error");
+        test:assertTrue(serviceDataBindingErrorState.errorMsg.length() > 0, "Error message should not be empty");
+        serviceDataBindingErrorState = {hasError: false, errorMsg: ""};
+    }
+    check serviceDataBindingListener.detach(xmlToRecordService);
+}
 
 isolated string emptyStringReceived = "initial";
 
-@test:Config {groups: ["serviceDataBinding", "serviceEdgeCases"], dependsOn: [testServiceInvalidRecordStructure]}
+@test:Config {groups: ["serviceDataBinding", "serviceEdgeCases"], dependsOn: [testServiceXmlToRecordMismatch]}
 isolated function testServiceEmptyString() returns error? {
     string testPayload = "";
 
