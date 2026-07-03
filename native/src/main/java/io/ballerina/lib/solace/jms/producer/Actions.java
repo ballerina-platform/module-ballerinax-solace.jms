@@ -127,6 +127,9 @@ public final class Actions {
     public static Object send(BObject producer, BMap<BString, Object> bMessage) {
         MessageProducer nativeProducer = (MessageProducer) producer.getNativeData(NATIVE_PRODUCER);
         Session nativeSession = (Session) producer.getNativeData(NATIVE_SESSION);
+        if (nativeProducer == null || nativeSession == null) {
+            return CommonUtils.createError("Cannot send message: producer is not initialized or already closed");
+        }
 
         CompletableFuture<Object> future = new CompletableFuture<>();
         Thread.startVirtualThread(() -> {
@@ -166,7 +169,7 @@ public final class Actions {
     public static Object commit(BObject producer) {
         Session nativeSession = (Session) producer.getNativeData(NATIVE_SESSION);
         if (nativeSession == null) {
-            return CommonUtils.createError("Cannot commit transaction: session is not initialized");
+            return CommonUtils.createError("Cannot commit transaction: session is not initialized or already closed");
         }
         try {
             nativeSession.commit();
@@ -188,7 +191,7 @@ public final class Actions {
     public static Object rollback(BObject producer) {
         Session nativeSession = (Session) producer.getNativeData(NATIVE_SESSION);
         if (nativeSession == null) {
-            return CommonUtils.createError("Cannot rollback transaction: session is not initialized");
+            return CommonUtils.createError("Cannot rollback transaction: session is not initialized or already closed");
         }
         try {
             nativeSession.rollback();
