@@ -55,9 +55,7 @@ final MessageProducer topicProducer = check new (BROKER_URL, {
 }
 isolated function testQueueService() returns error? {
     Service consumerSvc = @ServiceConfig {
-        queueName: "service-test-queue",
-        pollingInterval: 2,
-        receiveTimeout: 1
+        queueName: "service-test-queue"
     } service object {
         remote function onMessage(Message message) returns error? {
             lock {
@@ -69,7 +67,7 @@ isolated function testQueueService() returns error? {
     check queueProducer->send({
         payload: "Hello World from queue".toBytes()
     });
-    runtime:sleep(2);
+    runtime:sleep(1);
     lock {
         test:assertEquals(queueServiceReceivedMessageCount, 1, "'service-test-queue' did not received the expected number of messages");
     }
@@ -81,9 +79,7 @@ isolated function testQueueService() returns error? {
 isolated function testTopicService() returns error? {
     Service consumerSvc = @ServiceConfig {
         topicName: "service-test-topic",
-        subscriberName: "sub-1",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        subscriberName: "sub-1"
     } service object {
         remote function onMessage(Message message) returns error? {
             lock {
@@ -95,7 +91,7 @@ isolated function testTopicService() returns error? {
     check topicProducer->send({
         payload: "Hello World from topic".toBytes()
     });
-    runtime:sleep(2);
+    runtime:sleep(1);
     lock {
         test:assertEquals(topicServiceReceivedMessageCount, 1, "'service-test-topic' did not received the expected number of messages");
     }
@@ -110,22 +106,20 @@ isolated function testServiceWithCaller() returns error? {
     Service consumerSvc = @ServiceConfig {
         sessionAckMode: CLIENT_ACKNOWLEDGE,
         topicName: "service-test-topic",
-        subscriberName: "test.subscription",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        subscriberName: "test.subscription"
     } service object {
         remote function onMessage(Message message, Caller caller) returns error? {
             lock {
                 serviceWithCallerReceivedMsgCount += 1;
             }
-            check caller->acknowledge(message);
+            check caller->ack(message);
         }
     };
     check solaceListener.attach(consumerSvc, "test-caller-svc");
     check topicProducer->send({
         payload: "Hello World from topic".toBytes()
     });
-    runtime:sleep(2);
+    runtime:sleep(1);
     lock {
         test:assertEquals(serviceWithCallerReceivedMsgCount, 1, "'service-test-topic' did not received the expected number of messages");
     }
@@ -140,9 +134,7 @@ isolated function testServiceWithTransactions() returns error? {
     Service consumerSvc = @ServiceConfig {
         sessionAckMode: SESSION_TRANSACTED,
         topicName: "trx-service-test-topic",
-        subscriberName: "test.transated.sub",
-        pollingInterval: 1,
-        receiveTimeout: 1
+        subscriberName: "test.transated.sub"
     } service object {
         isolated remote function onMessage(Message message, Caller caller) returns error? {
             lock {
@@ -182,7 +174,7 @@ isolated function testServiceWithTransactions() returns error? {
     check topicProducer->send({
         payload: "End of messages".toBytes()
     });
-    runtime:sleep(5);
+    runtime:sleep(2);
     lock {
         test:assertEquals(ServiceWithTransactionsMsgCount, 4, "Invalid number of received messages");
     }
@@ -222,7 +214,7 @@ isolated function testServiceReturningError() returns error? {
     check topicProducer->send({
         payload: "This is a sample message".toBytes()
     });
-    runtime:sleep(2);
+    runtime:sleep(1);
 }
 
 @test:Config {
@@ -246,7 +238,7 @@ isolated function testListenerImmediateStop() returns error? {
     };
     check msgListener.attach(consumerSvc, "consumer-svc");
     check msgListener.'start();
-    runtime:sleep(2);
+    runtime:sleep(1);
     check msgListener.immediateStop();
 }
 
@@ -276,6 +268,6 @@ isolated function testServiceDetach() returns error? {
         }
     };
     check solaceListener.attach(consumerSvc, "consumer-svc");
-    runtime:sleep(2);
+    runtime:sleep(1);
     check solaceListener.detach(consumerSvc);
 }

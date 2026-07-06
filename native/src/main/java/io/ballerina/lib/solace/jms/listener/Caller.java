@@ -62,7 +62,7 @@ public class Caller {
         return null;
     }
 
-    public static Object acknowledge(BMap<BString, Object> message) {
+    public static Object ack(BMap<BString, Object> message) {
         try {
             Object nativeMessage = message.getNativeData(NATIVE_MESSAGE);
             if (Objects.nonNull(nativeMessage)) {

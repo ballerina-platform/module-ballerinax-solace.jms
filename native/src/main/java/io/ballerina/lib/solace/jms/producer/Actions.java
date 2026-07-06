@@ -56,6 +56,8 @@ public final class Actions {
      * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
     public static Object init(BObject producer, BString url, BMap<BString, Object> config) {
+        Connection connection = null;
+        Session session = null;
         try {
             ProducerConfiguration producerConfig = new ProducerConfiguration(config);
             ConnectionConfiguration connConfig = producerConfig.connectionConfig();
@@ -67,10 +69,10 @@ public final class Actions {
             connectionFactory.setDirectTransport(connConfig.directTransport());
             connectionFactory.setDirectOptimized(connConfig.directOptimized());
 
-            Connection connection = connectionFactory.createConnection();
+            connection = connectionFactory.createConnection();
             connection.start();
 
-            Session session = connection.createSession(producerConfig.transacted(), Session.AUTO_ACKNOWLEDGE);
+            session = connection.createSession(producerConfig.transacted(), Session.AUTO_ACKNOWLEDGE);
             Destination destination = createDestination(session, producerConfig.destination());
             MessageProducer jmsProducer = session.createProducer(destination);
 
@@ -80,13 +82,38 @@ public final class Actions {
 
             return null;
         } catch (JMSException exception) {
+            closeQuietly(session, connection);
             return CommonUtils.createError(
                     String.format("Error occurred while initializing the Solace MessageProducer: %s",
                             exception.getMessage()), exception);
         } catch (Exception exception) {
+            closeQuietly(session, connection);
             return CommonUtils.createError(
                     String.format("Unexpected error occurred during producer initialization: %s",
                             exception.getMessage()), exception);
+        }
+    }
+
+    /**
+     * Best-effort cleanup of a partially-initialized session/connection pair.
+     *
+     * @param session    JMS session to close, may be {@code null}
+     * @param connection JMS connection to close, may be {@code null}
+     */
+    private static void closeQuietly(Session session, Connection connection) {
+        try {
+            if (session != null) {
+                session.close();
+            }
+        } catch (JMSException ignored) {
+            // best-effort cleanup
+        }
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (JMSException ignored) {
+            // best-effort cleanup
         }
     }
 
@@ -100,12 +127,17 @@ public final class Actions {
     public static Object send(BObject producer, BMap<BString, Object> bMessage) {
         MessageProducer nativeProducer = (MessageProducer) producer.getNativeData(NATIVE_PRODUCER);
         Session nativeSession = (Session) producer.getNativeData(NATIVE_SESSION);
+        if (nativeProducer == null || nativeSession == null) {
+            return CommonUtils.createError("Cannot send message: producer is not initialized or already closed");
+        }
 
         CompletableFuture<Object> future = new CompletableFuture<>();
         Thread.startVirtualThread(() -> {
             try {
                 Message message = MessageConverter.toJmsMessage(nativeSession, bMessage);
-                nativeProducer.send(message);
+                int deliveryMode = MessageConverter.resolveDeliveryMode(bMessage, nativeProducer.getDeliveryMode());
+                int priority = MessageConverter.resolvePriority(bMessage, nativeProducer.getPriority());
+                nativeProducer.send(message, deliveryMode, priority, nativeProducer.getTimeToLive());
                 future.complete(null);
             } catch (JMSException exception) {
                 future.complete(CommonUtils.createError(
@@ -137,7 +169,7 @@ public final class Actions {
     public static Object commit(BObject producer) {
         Session nativeSession = (Session) producer.getNativeData(NATIVE_SESSION);
         if (nativeSession == null) {
-            return CommonUtils.createError("Cannot commit transaction: session is not initialized");
+            return CommonUtils.createError("Cannot commit transaction: session is not initialized or already closed");
         }
         try {
             nativeSession.commit();
@@ -159,7 +191,7 @@ public final class Actions {
     public static Object rollback(BObject producer) {
         Session nativeSession = (Session) producer.getNativeData(NATIVE_SESSION);
         if (nativeSession == null) {
-            return CommonUtils.createError("Cannot rollback transaction: session is not initialized");
+            return CommonUtils.createError("Cannot rollback transaction: session is not initialized or already closed");
         }
         try {
             nativeSession.rollback();
@@ -201,8 +233,8 @@ public final class Actions {
         }
     }
 
-    private static Destination createDestination(Session session,
-                                                io.ballerina.lib.solace.jms.producer.Destination destination)
+    static Destination createDestination(Session session,
+                                          io.ballerina.lib.solace.jms.producer.Destination destination)
             throws JMSException {
         if (destination instanceof Topic topic) {
             return session.createTopic(topic.topicName());

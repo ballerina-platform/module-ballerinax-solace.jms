@@ -45,8 +45,4 @@ public sealed interface ServiceConfig permits QueueConfig, TopicConfig {
     }
 
     String ackMode();
-
-    long pollingInterval();
-
-    long receiveTimeout();
 }

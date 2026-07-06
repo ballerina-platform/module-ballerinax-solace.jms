@@ -195,7 +195,7 @@ public final class Actions {
      * @param message Ballerina message to acknowledge
      * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
-    public static Object acknowledge(BMap<BString, Object> message) {
+    public static Object ack(BMap<BString, Object> message) {
         try {
             // Retrieve the native JMS message stored in the Ballerina message
             Message nativeMessage = (Message) message.getNativeData(MessageConverter.NATIVE_MESSAGE);

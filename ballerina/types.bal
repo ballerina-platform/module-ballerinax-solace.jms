@@ -28,8 +28,8 @@ public enum AcknowledgementMode {
     # either when the session has successfully returned from a call to `receive` or when 
     # the message listener the session has called to process the message successfully returns.
     AUTO_ACKNOWLEDGE = "AUTO_ACKNOWLEDGE",
-    # Indicates that the client acknowledges a consumed message by calling the 
-    # MessageConsumer's or Caller's `acknowledge` method. Acknowledging a consumed message 
+    # Indicates that the client acknowledges a consumed message by calling the
+    # MessageConsumer's or Caller's `ack` method. Acknowledging a consumed message
     # acknowledges all messages that the session has consumed.
     CLIENT_ACKNOWLEDGE = "CLIENT_ACKNOWLEDGE",
     # Indicates that the session to lazily acknowledge the delivery of messages. 
@@ -86,13 +86,8 @@ public type TopicConfig record {|
 |};
 
 # Common configurations related to the Solace service configuration related to queue or topic subscription.
-#
-# + pollingInterval - The polling interval in seconds
-# + receiveTimeout - The timeout to wait till a `receive` action finishes when there are no messages
 type CommonServiceConfig record {|
     *CommonSubscriptionConfig;
-    decimal pollingInterval = 10;
-    decimal receiveTimeout = 10.0;
 |};
 
 # Represents configurations for a service configurations related to solace queue subscription.
@@ -372,7 +367,7 @@ public type Message record {|
     int timestamp?;
     # JMS destination of this message (Only set by the JMS provider)
     Destination destination?;
-    # Delivery mode of this message (Only set by the JMS provider)
+    # Delivery mode for the message (`1` = non-persistent, `2` = persistent)
     int deliveryMode?;
     # Indication of whether this message is being redelivered (Only set by the JMS provider)
     boolean redelivered?;
@@ -380,7 +375,7 @@ public type Message record {|
     string jmsType?;
     # Message expiration time (Only set by the JMS provider)
     int expiration?;
-    # Message priority level (Only set by the JMS provider)
+    # Priority level for the message (0-9, where 9 is the highest)
     int priority?;
 |};
 

@@ -59,7 +59,7 @@ public record ProducerConfiguration(
      * @param destinationMap destination configuration map
      * @return Destination instance (Topic or Queue)
      */
-    private static Destination getDestination(BMap<BString, Object> destinationMap) {
+    static Destination getDestination(BMap<BString, Object> destinationMap) {
         if (destinationMap.containsKey(StringUtils.fromString("topicName"))) {
             return new Topic(destinationMap);
         } else if (destinationMap.containsKey(StringUtils.fromString("queueName"))) {

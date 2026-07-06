@@ -19,11 +19,8 @@
 package io.ballerina.lib.solace.jms.listener;
 
 import io.ballerina.runtime.api.utils.StringUtils;
-import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
-
-import java.math.BigDecimal;
 
 /**
  * Represents configuration details for consuming messages from a JMS topic subscription.
@@ -45,20 +42,15 @@ import java.math.BigDecimal;
  *
  * @param subscriberName  An optional name to identify the subscription, especially for durable
  *                        or shared subscriptions.
- * @param pollingInterval   The polling interval in milliseconds
- * @param receiveTimeout    The timeout to wait till a `receive` action finishes when there are no messages
  */
 public record TopicConfig(String ackMode, String topicName, String messageSelector, boolean noLocal,
-                          String consumerType, String subscriberName, long pollingInterval,
-                          long receiveTimeout) implements ServiceConfig {
+                          String consumerType, String subscriberName) implements ServiceConfig {
     private static final BString SESSION_ACK_MODE = StringUtils.fromString("sessionAckMode");
     private static final BString TOPIC_NAME = StringUtils.fromString("topicName");
     private static final BString MSG_SELECTOR = StringUtils.fromString("messageSelector");
     private static final BString NO_LOCAL = StringUtils.fromString("noLocal");
     private static final BString CONSUMER_TYPE = StringUtils.fromString("consumerType");
     private static final BString SUBSCRIBER_NAME = StringUtils.fromString("subscriberName");
-    private static final BString POLLING_INTERVAL = StringUtils.fromString("pollingInterval");
-    private static final BString RECEIVE_TIMEOUT = StringUtils.fromString("receiveTimeout");
 
     TopicConfig(BMap<BString, Object> configurations) {
         this(
@@ -69,11 +61,7 @@ public record TopicConfig(String ackMode, String topicName, String messageSelect
                 configurations.getBooleanValue(NO_LOCAL),
                 configurations.getStringValue(CONSUMER_TYPE).getValue(),
                 configurations.containsKey(SUBSCRIBER_NAME) ?
-                        configurations.getStringValue(SUBSCRIBER_NAME).getValue() : null,
-                ((BDecimal) configurations.get(POLLING_INTERVAL)).decimalValue().multiply(BigDecimal.valueOf(1000))
-                        .longValue(),
-                ((BDecimal) configurations.get(RECEIVE_TIMEOUT)).decimalValue().multiply(BigDecimal.valueOf(1000))
-                        .longValue()
+                        configurations.getStringValue(SUBSCRIBER_NAME).getValue() : null
         );
     }
 }
