@@ -1,0 +1,5 @@
+[package]
+org = "examples"
+name = "stock_update_publisher"
+version = "0.1.0"
+distribution = "2201.12.0"

@@ -10,6 +10,16 @@
 
 The `ballerinax/solace.jms` package provides APIs to interact with Solace PubSub+ brokers through the JMS API. It allows developers to programmatically produce and consume messages, manage topics and queues, and implement robust, event-driven solutions that leverage Solace’s high-performance messaging capabilities within Ballerina applications.
 
+## Examples
+
+The `solace.jms` package provides practical examples illustrating its usage in various real-world scenarios. Explore these [examples](https://github.com/ballerina-platform/module-ballerinax-solace.jms/tree/main/examples) to understand how to produce, consume, and reliably process messages with a Solace event broker.
+
+1. [Order Fulfillment](https://github.com/ballerina-platform/module-ballerinax-solace.jms/tree/main/examples/order-fulfillment) - Send orders to a queue and process them with `CLIENT_ACKNOWLEDGE` mode, so a worker that crashes before acknowledging a message picks it back up on restart instead of losing it.
+
+2. [Live Price Alerts](https://github.com/ballerina-platform/module-ballerinax-solace.jms/tree/main/examples/live-price-alerts) - Publish stock price updates to hierarchical topics and raise alerts only for significant moves, using a topic wildcard and a JMS message selector.
+
+3. [Transactional Inventory Sync](https://github.com/ballerina-platform/module-ballerinax-solace.jms/tree/main/examples/transactional-inventory-sync) - Apply inventory deltas from a queue within a `SESSION_TRANSACTED` session, rolling back and safely discarding a bad update instead of corrupting inventory state.
+
 ## Build from the source
 
 ### Setting up the prerequisites
