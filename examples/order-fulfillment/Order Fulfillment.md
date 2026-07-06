@@ -2,7 +2,7 @@
 
 This example demonstrates the most fundamental Solace messaging pattern: point-to-point processing over a queue, with reliable, at-least-once delivery.
 
-An `order_service` sends orders to an `orders` queue using a `jms:MessageProducer`. A `fulfillment_worker` receives from the same queue with a `jms:MessageConsumer` configured with `sessionAckMode: CLIENT_ACKNOWLEDGE`, so a message stays on the queue until it is explicitly acknowledged with `consumer->ack()`. The worker simulates a crash right after receiving `ORD-1001`, closing its connection without acknowledging anything. It then opens a fresh connection - standing in for the worker restarting - and this time fulfills and acknowledges every order it receives, including the one abandoned by the "crashed" attempt.
+An `order_service` sends orders to an `orders` queue using a `jms:MessageProducer`. A `fulfillment_worker` receives from the same queue with a `jms:MessageConsumer` configured with `sessionAckMode: jms:CLIENT_ACKNOWLEDGE`, so a message stays on the queue until it is explicitly acknowledged with `consumer->ack()`. The worker simulates a crash right after receiving `ORD-1001`, closing its connection without acknowledging anything. It then opens a fresh connection - standing in for the worker restarting - and this time fulfills and acknowledges every order it receives, including the one abandoned by the "crashed" attempt.
 
 This shows how a worker that only acknowledges a message once it has genuinely finished processing it can crash or restart without ever losing an order.
 
