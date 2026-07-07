@@ -122,16 +122,26 @@ public type KerberosConfig record {|
 |};
 ```
 
-- `OAuth2Config` record represents the OAuth 2.0 authentication configuration for connecting to a Solace broker. 
+- `OAuth2Config` represents the OAuth 2.0 authentication configuration for connecting to a Solace
+broker. It is a union of `OAuth2AccessTokenAuth` and `OidcIdTokenAuth` - exactly one of them must
+be provided, and which one is used determines whether an OAuth 2.0 access token or an OIDC ID
+token is presented to the broker.
 ```ballerina
-public type OAuth2Config record {|
+public type OAuth2AccessTokenAuth record {|
     # The OAuth 2.0 issuer identifier URI
     string issuer;
     # The OAuth 2.0 access token for authentication
-    string accessToken?;
-    # The OpenID Connect (OIDC) ID token for authentication
-    string oidcToken?;
+    string accessToken;
 |};
+
+public type OidcIdTokenAuth record {|
+    # The OAuth 2.0 issuer identifier URI
+    string issuer;
+    # The OpenID Connect (OIDC) ID token for authentication
+    string oidcToken;
+|};
+
+public type OAuth2Config OAuth2AccessTokenAuth|OidcIdTokenAuth;
 ```
 
 - `SecureSocket` record represents the SSL/TLS configuration for secure connections to a Solace broker.

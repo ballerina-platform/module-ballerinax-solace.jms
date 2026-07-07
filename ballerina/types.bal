@@ -219,15 +219,25 @@ public type KerberosConfig record {|
     boolean jaasConfigReloadEnabled = false;
 |};
 
-# Represents the OAuth 2.0 authentication configuration for connecting to a Solace broker
-public type OAuth2Config record {|
+# Represents the OAuth 2.0 Access Token authentication configuration for connecting to a Solace broker
+public type OAuth2AccessTokenAuth record {|
     # The OAuth 2.0 issuer identifier URI
     string issuer;
     # The OAuth 2.0 access token for authentication
-    string accessToken?;
-    # The OpenID Connect (OIDC) ID token for authentication
-    string oidcToken?;
+    string accessToken;
 |};
+
+# Represents the OpenID Connect (OIDC) ID Token authentication configuration for connecting to a Solace broker
+public type OidcIdTokenAuth record {|
+    # The OAuth 2.0 issuer identifier URI
+    string issuer;
+    # The OpenID Connect (OIDC) ID token for authentication
+    string oidcToken;
+|};
+
+# Represents the OAuth 2.0 authentication configuration for connecting to a Solace broker
+# (mutually exclusive - use either access token or ID token)
+public type OAuth2Config OAuth2AccessTokenAuth|OidcIdTokenAuth;
 
 # Represents the retry configuration for connection and reconnection attempts to a Solace broker
 public type RetryConfig record {|
