@@ -26,6 +26,8 @@ public isolated client class MessageProducer {
     #     transacted: false
     # });
     # ```
+    # `destination` is optional here and can instead be supplied (or overridden) per call via
+    # `send()`'s `destination` parameter - see `send` below.
     #
     # + url - The Solace broker URL in the format `<scheme>://[username]:[password]@<host>[:port]`.
     # Supported schemes are `smf` (plain-text) and `smfs` (TLS/SSL).
@@ -50,11 +52,18 @@ public isolated client class MessageProducer {
     # Sends a message to the Solace broker.
     # ```ballerina
     # check producer->send(message);
+    # check producer->send(message, {queueName: "orders"});
     # ```
     #
+    # If `destination` is given here, it takes precedence over the producer's configured default
+    # destination (`ProducerConfiguration.destination`) for this call only. If neither is
+    # available - no `destination` argument and no configured default - this returns an `Error`.
+    #
     # + message - Message to be sent to the Solace broker
+    # + destination - The destination (Topic or Queue) to send to for this call, overriding the
+    # producer's configured default destination, if any
     # + return - A `jms:Error` if there is an error or else `()`
-    isolated remote function send(Message message) returns Error? {
+    isolated remote function send(Message message, Destination? destination = ()) returns Error? {
         string|map<Value>|byte[] payload = convertPayload(message.payload);
         map<Property> properties = prepareProperties(message);
         InternalMessage iMessage = {
@@ -71,10 +80,10 @@ public isolated client class MessageProducer {
             expiration: message.expiration,
             priority: message.priority
         };
-        return self.externSend(iMessage);
+        return self.externSend(iMessage, destination);
     }
 
-    isolated function externSend(InternalMessage message) returns Error? = @java:Method {
+    isolated function externSend(InternalMessage message, Destination? destination) returns Error? = @java:Method {
         name: "send",
         'class: "io.ballerina.lib.solace.jms.producer.Actions"
     } external;

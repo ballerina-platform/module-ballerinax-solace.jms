@@ -13,28 +13,28 @@ type PriceUpdate record {|
 |};
 
 public function main() returns error? {
-    // A producer is bound to a single destination for its lifetime, so each topic
-    // gets its own short-lived producer here.
-    check publish("stocks/nasdaq/aapl", {symbol: "AAPL", price: 227.50d, changePercent: 2.1});
-    check publish("stocks/nasdaq/googl", {symbol: "GOOGL", price: 168.90d, changePercent: 6.8});
-    check publish("stocks/nyse/ibm", {symbol: "IBM", price: 231.40d, changePercent: 9.4});
-}
-
-function publish(string topic, PriceUpdate update) returns error? {
+    // No fixed destination is configured here - the producer picks a destination per publish
+    // call below, so one producer can fan out to every topic instead of one-per-topic.
     jms:MessageProducer producer = check new (brokerUrl, {
         messageVpn,
         auth: {username, password},
         // Solace direct messaging does not support message selectors, and the
         // subscriber uses one, so this producer must use guaranteed delivery too.
-        directTransport: false,
-        destination: {topicName: topic}
+        directTransport: false
     });
 
+    check publish(producer, "stocks/nasdaq/aapl", {symbol: "AAPL", price: 227.50d, changePercent: 2.1});
+    check publish(producer, "stocks/nasdaq/googl", {symbol: "GOOGL", price: 168.90d, changePercent: 6.8});
+    check publish(producer, "stocks/nyse/ibm", {symbol: "IBM", price: 231.40d, changePercent: 9.4});
+
+    check producer->close();
+}
+
+function publish(jms:MessageProducer producer, string topic, PriceUpdate update) returns error? {
     check producer->send({
         payload: update,
         properties: {"changePercent": update.changePercent}
-    });
-    check producer->close();
+    }, {topicName: topic});
 
     log:printInfo("Price update published", topic = topic, symbol = update.symbol, changePercent = update.changePercent);
 }

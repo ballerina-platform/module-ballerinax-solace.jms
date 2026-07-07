@@ -334,8 +334,9 @@ The `jms:MessageProducer` is used to send messages to a Solace destination.
 ```ballerina
 public type ProducerConfiguration record {|
     *jms:CommonConnectionConfiguration;
-    # The destination (Topic or Queue) where messages will be published
-    Destination destination;
+    # The default destination (Topic or Queue) where messages will be published. Optional - can be
+    # omitted and/or overridden per call via the `destination` parameter of `send()`
+    Destination destination?;
 |};
 ```
 
@@ -362,16 +363,22 @@ public isolated function init(string url, *ProducerConfiguration config) returns
 
 ### 4.3. Functions
 
-- To send a message to a destination in the Solace event broker, use `send` function.
+- To send a message to a destination in the Solace event broker, use `send` function. The
+`destination` parameter is optional and, when given, takes precedence over the producer's
+configured default destination for that call only. If neither a configured default nor a
+per-call `destination` is available, `send` returns an `Error`.
 ```ballerina
 # Sends a message to the Solace broker.
 # ```
 # check producer->send(message);
+# check producer->send(message, {queueName: "orders"});
 # ```
 #
 # + message - Message to be sent to the Solace broker
+# + destination - The destination (Topic or Queue) to send to for this call, overriding the
+# producer's configured default destination, if any
 # + return - A `jms:Error` if there is an error or else `()`
-isolated remote function send(Message message) returns Error?;
+isolated remote function send(Message message, Destination? destination = ()) returns Error?;
 ```
 
 - To commit all messages sent in this transaction and releases any locks currently held, use the `commit` function.

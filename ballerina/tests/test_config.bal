@@ -76,3 +76,12 @@ const string PRODUCER_REPLY_TO_QUEUE = "producer-reply-to-queue";
 const string PRODUCER_REPLY_TO_DESTINATION_QUEUE = "producer-reply-to-destination-queue";
 const string PRODUCER_REPLY_TO_TOPIC_QUEUE = "producer-reply-to-topic-queue";
 const string PRODUCER_REPLY_TO_DESTINATION_TOPIC = "test/producer/reply-to-topic";
+
+// Producer destination-binding tests (optional config destination + per-call override)
+const string PRODUCER_DEFAULT_DESTINATION_QUEUE = "producer-default-destination-queue";
+const string PRODUCER_NO_CONFIG_DESTINATION_QUEUE = "producer-no-config-destination-queue";
+const string PRODUCER_OVERRIDE_CONFIG_QUEUE = "producer-override-config-queue";
+const string PRODUCER_OVERRIDE_TARGET_QUEUE = "producer-override-target-queue";
+const string PRODUCER_OVERRIDE_TARGET_TOPIC = "test/producer/override-target-topic";
+const string PRODUCER_FANOUT_QUEUE_A = "producer-fanout-queue-a";
+const string PRODUCER_FANOUT_QUEUE_B = "producer-fanout-queue-b";

@@ -182,8 +182,9 @@ type CommonConnectionConfiguration record {
 # Represents the configuration for a Solace message producer.
 public type ProducerConfiguration record {|
     *CommonConnectionConfiguration;
-    # The destination (Topic or Queue) where messages will be published
-    Destination destination;
+    # The default destination (Topic or Queue) where messages will be published. Can be omitted
+    # and/or overridden per call via the `destination` parameter of `MessageProducer.send()`
+    Destination destination?;
 |};
 
 # Represents the configuration for a Solace message consumer.
