@@ -104,17 +104,18 @@ public final class Actions {
      * Receives the next message from the Solace broker within the specified timeout.
      *
      * @param consumer  Ballerina consumer object
-     * @param timeout   Timeout in seconds
+     * @param timeout   Timeout in seconds, or {@code null} to block indefinitely
      * @param bTypedesc Expected message type
      * @return Ballerina message, {@code null} if no message available, or {@code jms:Error} on failure
      */
-    public static Object receive(BObject consumer, BDecimal timeout, BTypedesc bTypedesc) {
+    public static Object receive(BObject consumer, Object timeout, BTypedesc bTypedesc) {
         MessageConsumer nativeConsumer = (MessageConsumer) consumer.getNativeData(NATIVE_CONSUMER);
 
         CompletableFuture<Object> future = new CompletableFuture<>();
         Thread.startVirtualThread(() -> {
             try {
-                BigDecimal timeoutDecimal = timeout.decimalValue();
+                BigDecimal timeoutDecimal =
+                        timeout instanceof BDecimal bDecimal ? bDecimal.decimalValue() : BigDecimal.ZERO;
                 long timeoutMillis = timeoutDecimal.multiply(BigDecimal.valueOf(1000)).longValue();
                 Message message = nativeConsumer.receive(timeoutMillis);
 

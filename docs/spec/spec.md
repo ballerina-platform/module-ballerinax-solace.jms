@@ -494,10 +494,11 @@ public isolated function init(string url, *ConsumerConfiguration config) returns
 # jms:Message? message = check consumer->receive(5.0);
 # ```
 #
-# + timeout - The maximum time to wait for a message in seconds. Default is 10.0 seconds
+# + timeout - The maximum time to wait for a message in seconds. A nil or zero timeout blocks
+# indefinitely, matching the underlying JMS default
 # + T - Optional type description of the expected data type
 # + return - The received `Message`, `()` if no message is available within the timeout, or a `jms:Error` if there is an error
-isolated remote function receive(decimal timeout = 10.0, typedesc<Message> T = <>) returns T|Error?;
+isolated remote function receive(decimal? timeout = (), typedesc<Message> T = <>) returns T|Error?;
 ```
 
 - To receives the next message from the Solace broker if one is immediately available, use the `receiveNoWait` function.

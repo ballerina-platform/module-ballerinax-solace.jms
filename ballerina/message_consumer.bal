@@ -51,10 +51,11 @@ public isolated client class MessageConsumer {
     # jms:Message? message = check consumer->receive(5.0);
     # ```
     #
-    # + timeout - The maximum time to wait for a message in seconds. Default is 10.0 seconds
+    # + timeout - The maximum time to wait for a message in seconds. A nil or zero timeout blocks
+    # indefinitely, matching the underlying JMS default
     # + T - Optional type description of the expected data type
     # + return - The received `Message`, `()` if no message is available within the timeout, or a `jms:Error` if there is an error
-    isolated remote function receive(decimal timeout = 10.0, typedesc<Message> T = <>) returns T|Error? = @java:Method {
+    isolated remote function receive(decimal? timeout = (), typedesc<Message> T = <>) returns T|Error? = @java:Method {
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
