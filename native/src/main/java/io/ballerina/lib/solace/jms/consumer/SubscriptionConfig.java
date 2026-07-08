@@ -32,7 +32,7 @@ public sealed interface SubscriptionConfig permits QueueConfig, TopicConfig {
      *
      * @return acknowledgement mode
      */
-    AcknowledgementMode sessionAckMode();
+    AcknowledgementMode ackMode();
 
     /**
      * Returns the message selector (optional).

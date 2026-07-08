@@ -105,7 +105,7 @@ isolated int serviceWithCallerReceivedMsgCount = 0;
 }
 isolated function testServiceWithCaller() returns error? {
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         topicName: "service-test-topic",
         subscriberName: "test.subscription"
     } service object {
@@ -133,7 +133,7 @@ isolated int ServiceWithTransactionsMsgCount = 0;
 }
 isolated function testServiceWithTransactions() returns error? {
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: SESSION_TRANSACTED,
+        ackMode: SESSION_TRANSACTED,
         topicName: "trx-service-test-topic",
         subscriberName: "test.transated.sub"
     } service object {
@@ -186,7 +186,7 @@ isolated function testServiceWithTransactions() returns error? {
 }
 isolated function testServiceWithOnError() returns error? {
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         topicName: "svc-test-topic"
     } service object {
         remote function onMessage(Message message) returns error? {
@@ -203,7 +203,7 @@ isolated function testServiceWithOnError() returns error? {
 }
 isolated function testServiceReturningError() returns error? {
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         topicName: "svc-test-topic"
     } service object {
         remote function onMessage(Message message) returns error? {
@@ -231,7 +231,7 @@ isolated function testListenerImmediateStop() returns error? {
         }
     });
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         topicName: "svc-test-topic"
     } service object {
         remote function onMessage(Message message, Caller caller) returns error? {
@@ -248,7 +248,7 @@ isolated function testListenerImmediateStop() returns error? {
 }
 isolated function testServiceAttachWithoutSvcPath() returns error? {
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         topicName: "svc-test-topic"
     } service object {
         remote function onMessage(Message message, Caller caller) returns error? {
@@ -262,7 +262,7 @@ isolated function testServiceAttachWithoutSvcPath() returns error? {
 }
 isolated function testServiceDetach() returns error? {
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         topicName: "svc-test-topic"
     } service object {
         remote function onMessage(Message message, Caller caller) returns error? {

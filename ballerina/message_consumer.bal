@@ -71,7 +71,7 @@ public isolated client class MessageConsumer {
     } external;
 
     # Acknowledges the specified message. This method should only be called when the consumer is configured
-    # with `sessionAckMode: CLIENT_ACKNOWLEDGE`.
+    # with `ackMode: CLIENT_ACKNOWLEDGE`.
     # ```ballerina
     # check consumer->ack(message);
     # ```
@@ -83,7 +83,7 @@ public isolated client class MessageConsumer {
     } external;
 
     # Commits all messages received in this transaction and releases any locks currently held.
-    # This method should only be called when the consumer is configured with `sessionAckMode: SESSION_TRANSACTED`.
+    # This method should only be called when the consumer is configured with `ackMode: SESSION_TRANSACTED`.
     # ```ballerina
     # check consumer->'commit();
     # ```
@@ -95,7 +95,7 @@ public isolated client class MessageConsumer {
     } external;
 
     # Rolls back any messages received in this transaction and releases any locks currently held.
-    # This method should only be called when the consumer is configured with `sessionAckMode: SESSION_TRANSACTED`.
+    # This method should only be called when the consumer is configured with `ackMode: SESSION_TRANSACTED`.
     # ```ballerina
     # check consumer->'rollback();
     # ```

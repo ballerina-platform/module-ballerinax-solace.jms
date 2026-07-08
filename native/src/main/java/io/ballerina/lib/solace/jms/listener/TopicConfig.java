@@ -45,7 +45,7 @@ import io.ballerina.runtime.api.values.BString;
  */
 public record TopicConfig(String ackMode, String topicName, String messageSelector, boolean noLocal,
                           String consumerType, String subscriberName) implements ServiceConfig {
-    private static final BString SESSION_ACK_MODE = StringUtils.fromString("sessionAckMode");
+    private static final BString ACK_MODE = StringUtils.fromString("ackMode");
     private static final BString TOPIC_NAME = StringUtils.fromString("topicName");
     private static final BString MSG_SELECTOR = StringUtils.fromString("messageSelector");
     private static final BString NO_LOCAL = StringUtils.fromString("noLocal");
@@ -54,7 +54,7 @@ public record TopicConfig(String ackMode, String topicName, String messageSelect
 
     TopicConfig(BMap<BString, Object> configurations) {
         this(
-                configurations.getStringValue(SESSION_ACK_MODE).getValue(),
+                configurations.getStringValue(ACK_MODE).getValue(),
                 configurations.getStringValue(TOPIC_NAME).getValue(),
                 configurations.containsKey(MSG_SELECTOR) ?
                         configurations.getStringValue(MSG_SELECTOR).getValue() : null,

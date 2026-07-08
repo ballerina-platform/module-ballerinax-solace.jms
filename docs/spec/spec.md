@@ -236,7 +236,7 @@ public type RetryConfig record {|
 ```ballerina
 type CommonSubscriptionConfig record {|
     # Configuration indicating how messages received by the session will be acknowledged
-    AcknowledgementMode sessionAckMode = AUTO_ACKNOWLEDGE;
+    AcknowledgementMode ackMode = AUTO_ACKNOWLEDGE;
     # Only messages with properties matching the message selector expression are delivered. 
     # If this value is not set that indicates that there is no message selector for the message consumer
     # For example, to only receive messages with a property `priority` set to `'high'`, use:
@@ -516,7 +516,7 @@ isolated remote function receiveNoWait(typedesc<Message> T = <>) returns T|Error
 - To acknowledges the specified message, use the `ack` function.
 ```ballerina
 # Acknowledges the specified message. This method should only be called when the consumer is configured
-# with `sessionAckMode: CLIENT_ACKNOWLEDGE`.
+# with `ackMode: CLIENT_ACKNOWLEDGE`.
 # ```
 # check consumer->ack(message);
 # ```
@@ -529,7 +529,7 @@ isolated remote function ack(Message message) returns Error?;
 - To commit all messages received in this transaction and releases any locks currently held, use the `commit` function.
 ```ballerina
 # Commits all messages received in this transaction and releases any locks currently held.
-# This method should only be called when the consumer is configured with `sessionAckMode: SESSION_TRANSACTED`.
+# This method should only be called when the consumer is configured with `ackMode: SESSION_TRANSACTED`.
 # ```
 # check consumer->'commit();
 # ```
@@ -541,7 +541,7 @@ isolated remote function 'commit() returns Error?
 - To roll back any messages received in this transaction and releases any locks currently held, use the `rollback` function.
 ```ballerina
 # Rolls back any messages received in this transaction and releases any locks currently held.
-# This method should only be called when the consumer is configured with `sessionAckMode: SESSION_TRANSACTED`.
+# This method should only be called when the consumer is configured with `ackMode: SESSION_TRANSACTED`.
 # ```
 # check consumer->'rollback();
 # ```

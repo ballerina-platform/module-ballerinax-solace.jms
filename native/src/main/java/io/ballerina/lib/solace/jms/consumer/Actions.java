@@ -78,7 +78,7 @@ public final class Actions {
             connection.start();
 
             // Create session with acknowledgement mode from subscription config
-            int ackMode = subscriptionConfig.sessionAckMode().getJmsMode();
+            int ackMode = subscriptionConfig.ackMode().getJmsMode();
             boolean transacted = (ackMode == Session.SESSION_TRANSACTED);
             Session session = connection.createSession(transacted, ackMode);
 

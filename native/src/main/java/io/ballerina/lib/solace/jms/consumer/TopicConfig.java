@@ -25,7 +25,7 @@ import io.ballerina.runtime.api.values.BString;
 /**
  * Topic subscription configuration.
  *
- * @param sessionAckMode Session acknowledgement mode
+ * @param ackMode Session acknowledgement mode
  * @param topicName Topic name
  * @param messageSelector Message selector (optional)
  * @param noLocal No local flag for topic subscribers
@@ -33,14 +33,14 @@ import io.ballerina.runtime.api.values.BString;
  * @param subscriberName Subscriber name for durable/shared subscriptions
  */
 public record TopicConfig(
-        AcknowledgementMode sessionAckMode,
+        AcknowledgementMode ackMode,
         String topicName,
         String messageSelector,
         boolean noLocal,
         ConsumerType consumerType,
         String subscriberName) implements SubscriptionConfig {
 
-    private static final BString SESSION_ACK_MODE_KEY = StringUtils.fromString("sessionAckMode");
+    private static final BString ACK_MODE_KEY = StringUtils.fromString("ackMode");
     private static final BString TOPIC_NAME_KEY = StringUtils.fromString("topicName");
     private static final BString MESSAGE_SELECTOR_KEY = StringUtils.fromString("messageSelector");
     private static final BString NO_LOCAL_KEY = StringUtils.fromString("noLocal");
@@ -50,7 +50,7 @@ public record TopicConfig(
     public TopicConfig(BMap<BString, Object> config) {
         this(
                 AcknowledgementMode.valueOf(
-                        config.getStringValue(SESSION_ACK_MODE_KEY).getValue()),
+                        config.getStringValue(ACK_MODE_KEY).getValue()),
                 config.getStringValue(TOPIC_NAME_KEY).getValue(),
                 config.containsKey(MESSAGE_SELECTOR_KEY)
                         ? config.getStringValue(MESSAGE_SELECTOR_KEY).getValue()

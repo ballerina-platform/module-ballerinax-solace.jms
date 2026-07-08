@@ -50,13 +50,13 @@ public enum ConsumerType {
 
 # Common configurations related to the Solace queue or topic subscription.
 #
-# + sessionAckMode - Configuration indicating how messages received by the session will be acknowledged
+# + ackMode - Configuration indicating how messages received by the session will be acknowledged
 # + messageSelector - Only messages with properties matching the message selector expression are delivered. 
 # If this value is not set that indicates that there is no message selector for the message consumer
 # For example, to only receive messages with a property `priority` set to `'high'`, use:
 # `"priority = 'high'"`. If this value is not set, all messages in the queue will be delivered.
 type CommonSubscriptionConfig record {|
-    AcknowledgementMode sessionAckMode = AUTO_ACKNOWLEDGE;
+    AcknowledgementMode ackMode = AUTO_ACKNOWLEDGE;
     string messageSelector?;
 |};
 

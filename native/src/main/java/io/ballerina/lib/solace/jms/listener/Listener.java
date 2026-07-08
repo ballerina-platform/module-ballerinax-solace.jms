@@ -80,9 +80,9 @@ public class Listener {
             Service.validateService(env.getRuntime(), bService);
             Service nativeService = new Service(bService);
             ServiceConfig svcConfig = nativeService.getServiceConfig();
-            int sessionAckMode = getSessionAckMode(svcConfig.ackMode());
-            boolean transacted = Session.SESSION_TRANSACTED == sessionAckMode;
-            Session session = connection.createSession(transacted, sessionAckMode);
+            int jmsAckMode = getJmsAckMode(svcConfig.ackMode());
+            boolean transacted = Session.SESSION_TRANSACTED == jmsAckMode;
+            Session session = connection.createSession(transacted, jmsAckMode);
             MessageConsumer consumer = ListenerUtils.createConsumer(session, svcConfig);
             MessageDispatcher messageDispatcher = new MessageDispatcher(env.getRuntime(), nativeService, session);
             MessageReceiver receiver = new MessageReceiver(session, consumer, messageDispatcher);
@@ -103,7 +103,7 @@ public class Listener {
         return null;
     }
 
-    static int getSessionAckMode(String ackMode) {
+    static int getJmsAckMode(String ackMode) {
         return switch (ackMode) {
             case SESSION_TRANSACTED_MODE -> Session.SESSION_TRANSACTED;
             case AUTO_ACKNOWLEDGE_MODE -> Session.AUTO_ACKNOWLEDGE;

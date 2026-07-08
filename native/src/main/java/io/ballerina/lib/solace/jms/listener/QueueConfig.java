@@ -34,13 +34,13 @@ import io.ballerina.runtime.api.values.BString;
  *                        If this value is {@code null}, no selector is applied.
  */
 public record QueueConfig(String ackMode, String queueName, String messageSelector) implements ServiceConfig {
-    private static final BString SESSION_ACK_MODE = StringUtils.fromString("sessionAckMode");
+    private static final BString ACK_MODE = StringUtils.fromString("ackMode");
     private static final BString QUEUE_NAME = StringUtils.fromString("queueName");
     private static final BString MSG_SELECTOR = StringUtils.fromString("messageSelector");
 
     QueueConfig(BMap<BString, Object> configurations) {
         this(
-                configurations.getStringValue(SESSION_ACK_MODE).getValue(),
+                configurations.getStringValue(ACK_MODE).getValue(),
                 configurations.getStringValue(QUEUE_NAME).getValue(),
                 configurations.containsKey(MSG_SELECTOR) ?
                         configurations.getStringValue(MSG_SELECTOR).getValue() : null

@@ -25,23 +25,23 @@ import io.ballerina.runtime.api.values.BString;
 /**
  * Queue subscription configuration.
  *
- * @param sessionAckMode Session acknowledgement mode
+ * @param ackMode Session acknowledgement mode
  * @param queueName Queue name
  * @param messageSelector Message selector (optional)
  */
 public record QueueConfig(
-        AcknowledgementMode sessionAckMode,
+        AcknowledgementMode ackMode,
         String queueName,
         String messageSelector) implements SubscriptionConfig {
 
-    private static final BString SESSION_ACK_MODE_KEY = StringUtils.fromString("sessionAckMode");
+    private static final BString ACK_MODE_KEY = StringUtils.fromString("ackMode");
     private static final BString QUEUE_NAME_KEY = StringUtils.fromString("queueName");
     private static final BString MESSAGE_SELECTOR_KEY = StringUtils.fromString("messageSelector");
 
     public QueueConfig(BMap<BString, Object> config) {
         this(
                 AcknowledgementMode.valueOf(
-                        config.getStringValue(SESSION_ACK_MODE_KEY).getValue()),
+                        config.getStringValue(ACK_MODE_KEY).getValue()),
                 config.getStringValue(QUEUE_NAME_KEY).getValue(),
                 config.containsKey(MESSAGE_SELECTOR_KEY)
                         ? config.getStringValue(MESSAGE_SELECTOR_KEY).getValue()

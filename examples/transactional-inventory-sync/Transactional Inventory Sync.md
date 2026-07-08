@@ -2,7 +2,7 @@
 
 This example demonstrates `SESSION_TRANSACTED` consumption: applying a batch of related changes as a unit of work that can be rolled back, instead of relying on per-message acknowledgement alone.
 
-A `stock_update_publisher` seeds a `stock-updates` queue with inventory delta messages, including one for an item ("gizmo") that doesn't exist in inventory - simulating bad data from a misconfigured upstream system. An `inventory_sync_service` consumes with `sessionAckMode: SESSION_TRANSACTED`. For each valid update it applies the delta to an in-memory inventory map and calls `consumer->'commit()`. For the unknown item, it calls `consumer->'rollback()` instead of applying anything - the message is redelivered, and this time the service logs and discards it (then commits), so the transaction doesn't spin forever on the same bad update.
+A `stock_update_publisher` seeds a `stock-updates` queue with inventory delta messages, including one for an item ("gizmo") that doesn't exist in inventory - simulating bad data from a misconfigured upstream system. An `inventory_sync_service` consumes with `ackMode: SESSION_TRANSACTED`. For each valid update it applies the delta to an in-memory inventory map and calls `consumer->'commit()`. For the unknown item, it calls `consumer->'rollback()` instead of applying anything - the message is redelivered, and this time the service logs and discards it (then commits), so the transaction doesn't spin forever on the same bad update.
 
 The result: inventory only ever reflects fully-applied, valid updates. A bad message is never partially applied and never silently dropped without being redelivered at least once for review.
 

@@ -37,7 +37,7 @@ function runWorkerSession() returns error? {
         directTransport: false,
         subscriptionConfig: {
             queueName: ORDERS_QUEUE,
-            sessionAckMode: jms:CLIENT_ACKNOWLEDGE
+            ackMode: jms:CLIENT_ACKNOWLEDGE
         }
     });
 

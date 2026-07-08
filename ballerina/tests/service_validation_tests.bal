@@ -39,7 +39,7 @@ isolated function testAnnotationNotFound() returns error? {
 }
 isolated function testSvcWithResourceMethods() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -64,7 +64,7 @@ isolated function testSvcWithResourceMethods() returns error? {
 }
 isolated function testSvcWithNoRemoteMethods() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {};
     Error? result = solaceListener.attach(svc);
@@ -82,7 +82,7 @@ isolated function testSvcWithNoRemoteMethods() returns error? {
 }
 isolated function testSvcWithInvalidRemoteMethod() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -104,7 +104,7 @@ isolated function testSvcWithInvalidRemoteMethod() returns error? {
 }
 isolated function testSvcMethodWithAdditionalParameters() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -126,7 +126,7 @@ isolated function testSvcMethodWithAdditionalParameters() returns error? {
 }
 isolated function testSvcMethodWithInvalidParams() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -148,7 +148,7 @@ isolated function testSvcMethodWithInvalidParams() returns error? {
 }
 isolated function testSvcMethodMandatoryParamMissing() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -170,7 +170,7 @@ isolated function testSvcMethodMandatoryParamMissing() returns error? {
 }
 isolated function testSvcOnErrorWithoutParameters() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -195,7 +195,7 @@ isolated function testSvcOnErrorWithoutParameters() returns error? {
 }
 isolated function testSvcOnErrorWithInvalidParameter() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -220,7 +220,7 @@ isolated function testSvcOnErrorWithInvalidParameter() returns error? {
 }
 isolated function testSvcOnErrorWithAdditionalParameters() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -245,7 +245,7 @@ isolated function testSvcOnErrorWithAdditionalParameters() returns error? {
 }
 isolated function testDetachFailure() returns error? {
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test.svc.attach"
     } service object {
         remote function onMessage(Message message, Caller caller) returns error? {

@@ -44,7 +44,7 @@ isolated function testClientAckWithQueue() returns error? {
         },
         subscriptionConfig: {
             queueName: CLIENT_ACK_QUEUE,
-            sessionAckMode: CLIENT_ACKNOWLEDGE
+            ackMode: CLIENT_ACKNOWLEDGE
         }
     });
 
@@ -85,7 +85,7 @@ isolated function testClientAckMultipleMessages() returns error? {
         },
         subscriptionConfig: {
             queueName: CLIENT_ACK_MULTIPLE_QUEUE,
-            sessionAckMode: CLIENT_ACKNOWLEDGE
+            ackMode: CLIENT_ACKNOWLEDGE
         }
     });
 
@@ -142,7 +142,7 @@ isolated function testClientAckWithoutAck() returns error? {
         },
         subscriptionConfig: {
             queueName: CLIENT_ACK_NO_ACK_QUEUE,
-            sessionAckMode: CLIENT_ACKNOWLEDGE
+            ackMode: CLIENT_ACKNOWLEDGE
         }
     });
 
@@ -164,7 +164,7 @@ isolated function testClientAckWithoutAck() returns error? {
         },
         subscriptionConfig: {
             queueName: CLIENT_ACK_NO_ACK_QUEUE,
-            sessionAckMode: CLIENT_ACKNOWLEDGE
+            ackMode: CLIENT_ACKNOWLEDGE
         }
     });
 
@@ -188,7 +188,7 @@ isolated function testClientAckWithTopic() returns error? {
         },
         subscriptionConfig: {
             topicName: CLIENT_ACK_TOPIC,
-            sessionAckMode: CLIENT_ACKNOWLEDGE
+            ackMode: CLIENT_ACKNOWLEDGE
         }
     });
 
@@ -247,7 +247,7 @@ isolated function testClientAckWithDifferentMessageTypes() returns error? {
         },
         subscriptionConfig: {
             queueName: CLIENT_ACK_MSG_TYPES_QUEUE,
-            sessionAckMode: CLIENT_ACKNOWLEDGE
+            ackMode: CLIENT_ACKNOWLEDGE
         }
     });
 
@@ -307,7 +307,7 @@ isolated function testClientAckWithMessageProperties() returns error? {
         },
         subscriptionConfig: {
             queueName: CLIENT_ACK_PROPERTIES_QUEUE,
-            sessionAckMode: CLIENT_ACKNOWLEDGE
+            ackMode: CLIENT_ACKNOWLEDGE
         }
     });
 

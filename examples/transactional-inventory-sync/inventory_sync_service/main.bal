@@ -22,7 +22,7 @@ public function main() returns error? {
         directTransport: false,
         subscriptionConfig: {
             queueName: STOCK_UPDATES_QUEUE,
-            sessionAckMode: jms:SESSION_TRANSACTED
+            ackMode: jms:SESSION_TRANSACTED
         }
     });
 
