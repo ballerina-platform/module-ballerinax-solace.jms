@@ -41,5 +41,6 @@ create_queue() {
 # Create queues
 create_queue "test-queue"
 create_queue "test-transacted-queue"
+create_queue "producer-ttl-queue"
 
 echo "Solace initialization completed!"

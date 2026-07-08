@@ -18,8 +18,10 @@
 
 package io.ballerina.lib.solace.jms.producer;
 
+import io.ballerina.lib.solace.jms.config.ConfigUtils;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BArray;
+import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
@@ -42,6 +44,7 @@ public final class MessageConverter {
     private static final BString REPLY_TO = StringUtils.fromString("replyTo");
     private static final BString DELIVERY_MODE = StringUtils.fromString("deliveryMode");
     private static final BString PRIORITY = StringUtils.fromString("priority");
+    private static final BString TIME_TO_LIVE = StringUtils.fromString("timeToLive");
 
     private MessageConverter() {}
 
@@ -120,6 +123,21 @@ public final class MessageConverter {
             return priority.intValue();
         }
         return defaultPriority;
+    }
+
+    /**
+     * Resolves the time-to-live to use for a send operation.
+     *
+     * @param bMessage             Ballerina message map
+     * @param defaultTimeToLive    time-to-live in milliseconds to fall back to when not set on the message
+     * @return the time-to-live in milliseconds set on the message (converted from seconds), or
+     *         {@code defaultTimeToLive} if absent
+     */
+    static long resolveTimeToLive(BMap<BString, Object> bMessage, long defaultTimeToLive) {
+        if (bMessage.containsKey(TIME_TO_LIVE) && bMessage.get(TIME_TO_LIVE) instanceof BDecimal timeToLive) {
+            return ConfigUtils.decimalToMillis(timeToLive.decimalValue());
+        }
+        return defaultTimeToLive;
     }
 
     private static Message createMessageByContentType(Session session, Object content) throws JMSException {

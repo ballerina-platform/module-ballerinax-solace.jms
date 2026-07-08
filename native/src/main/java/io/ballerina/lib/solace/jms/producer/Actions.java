@@ -147,7 +147,7 @@ public final class Actions {
                 Message message = MessageConverter.toJmsMessage(nativeSession, bMessage);
                 int deliveryMode = MessageConverter.resolveDeliveryMode(bMessage, nativeProducer.getDeliveryMode());
                 int priority = MessageConverter.resolvePriority(bMessage, nativeProducer.getPriority());
-                long timeToLive = nativeProducer.getTimeToLive();
+                long timeToLive = MessageConverter.resolveTimeToLive(bMessage, nativeProducer.getTimeToLive());
                 if (bDestination != null) {
                     Destination destination = createDestination(nativeSession,
                             ProducerConfiguration.getDestination((BMap<BString, Object>) bDestination));

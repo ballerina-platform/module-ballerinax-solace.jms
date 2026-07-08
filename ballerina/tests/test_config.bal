@@ -77,6 +77,10 @@ const string PRODUCER_REPLY_TO_DESTINATION_QUEUE = "producer-reply-to-destinatio
 const string PRODUCER_REPLY_TO_TOPIC_QUEUE = "producer-reply-to-topic-queue";
 const string PRODUCER_REPLY_TO_DESTINATION_TOPIC = "test/producer/reply-to-topic";
 
+// Producer time-to-live tests
+const string PRODUCER_TTL_QUEUE = "producer-ttl-queue";
+const string PRODUCER_DEFAULT_TTL_QUEUE = "producer-default-ttl-queue";
+
 // Producer destination-binding tests (optional config destination + per-call override)
 const string PRODUCER_DEFAULT_DESTINATION_QUEUE = "producer-default-destination-queue";
 const string PRODUCER_NO_CONFIG_DESTINATION_QUEUE = "producer-no-config-destination-queue";

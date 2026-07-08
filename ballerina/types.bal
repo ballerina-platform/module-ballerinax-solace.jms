@@ -17,6 +17,7 @@
 # The Solace service type.
 public type Service distinct service object {
     // remote function onMessage(jms:Message message, jms:Caller caller) returns error?;
+    // remote function onError(jms:Error err) returns error?;
 };
 
 # Defines the JMS session acknowledgement modes.
@@ -388,6 +389,9 @@ public type Message record {|
     int expiration?;
     # Priority level for the message (0-9, where 9 is the highest)
     int priority?;
+    # Time in seconds before this message expires and is discarded (or moved to a Dead Message
+    # Queue, if eligible) by the broker. `0` or unset means the message never expires (default)
+    decimal timeToLive?;
 |};
 
 // Internal representation for the Solace message.
@@ -404,5 +408,6 @@ type InternalMessage record {|
     string jmsType?;
     int expiration?;
     int priority?;
+    decimal timeToLive?;
 |};
 

@@ -16,6 +16,7 @@
 
 import ballerina/lang.runtime;
 import ballerina/test;
+import ballerina/time;
 
 @test:Config {
     groups: ["producer"]
@@ -484,6 +485,97 @@ isolated function testSendMessageWithDeliveryModeAndPriority() returns error? {
     if receivedMessage is Message {
         test:assertEquals(receivedMessage.deliveryMode, 1, "Delivery mode should be overridden to non-persistent");
         test:assertEquals(receivedMessage.priority, 7, "Priority should be overridden to 7");
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithTimeToLive() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_TTL_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    decimal ttlSeconds = 60d;
+    decimal sendTime = <decimal>time:utcNow()[0] * 1000;
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT,
+        timeToLive: ttlSeconds
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_TTL_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with time-to-live set");
+    if receivedMessage is Message {
+        int? expiration = receivedMessage?.expiration;
+        test:assertTrue(expiration is int, "Expiration should be populated by the provider");
+        if expiration is int {
+            // Provider computes JMSExpiration = send time + timeToLive; allow a generous window
+            // for clock skew/broker processing time rather than asserting an exact value.
+            test:assertTrue(<decimal>expiration >= sendTime + (ttlSeconds * 1000d) - 5000d,
+                    "Expiration should reflect the configured time-to-live");
+        }
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithDefaultTimeToLive() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_DEFAULT_TTL_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_DEFAULT_TTL_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with default (no) time-to-live");
+    if receivedMessage is Message {
+        // JMSExpiration is 0 (never expires) when no timeToLive was set on send.
+        test:assertEquals(receivedMessage?.expiration, (), "Expiration should be unset when timeToLive is omitted");
     }
     check consumer->close();
 }

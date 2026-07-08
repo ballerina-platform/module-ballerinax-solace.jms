@@ -78,7 +78,8 @@ public isolated client class MessageProducer {
             redelivered: message.redelivered,
             jmsType: message.jmsType,
             expiration: message.expiration,
-            priority: message.priority
+            priority: message.priority,
+            timeToLive: message.timeToLive
         };
         return self.externSend(iMessage, destination);
     }
