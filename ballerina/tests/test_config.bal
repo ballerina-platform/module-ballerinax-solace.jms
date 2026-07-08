@@ -38,6 +38,7 @@ const string CONSUMER_CORRELATION_ID_QUEUE = "consumer-correlation-id-queue";
 const string CONSUMER_TIMEOUT_QUEUE = "consumer-timeout-queue";
 const string CONSUMER_SELECTOR_QUEUE = "consumer-selector-queue";
 const string CONSUMER_XML_MSG_QUEUE = "consumer-xml-msg-queue";
+const string CONSUMER_FLOW_CONTROL_QUEUE = "consumer-flow-control-queue";
 
 // Client acknowledge test queues
 const string CLIENT_ACK_QUEUE = "client-ack-queue";

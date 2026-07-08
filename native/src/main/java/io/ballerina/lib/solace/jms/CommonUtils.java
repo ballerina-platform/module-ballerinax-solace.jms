@@ -18,6 +18,7 @@
 
 package io.ballerina.lib.solace.jms;
 
+import com.solacesystems.jms.SolConnectionFactory;
 import com.solacesystems.jms.SupportedProperty;
 import io.ballerina.lib.solace.jms.config.ConnectionConfiguration;
 import io.ballerina.lib.solace.jms.config.auth.BasicAuthConfig;
@@ -176,6 +177,26 @@ public final class CommonUtils {
         }
 
         return props;
+    }
+
+    /**
+     * Applies guaranteed-delivery (Assured Delivery) receive flow-control settings to the given connection
+     * factory. These settings are only effective when the connection uses guaranteed (persistent) delivery,
+     * i.e. when {@code directTransport} is {@code false}.
+     *
+     * @param factory the connection factory to configure
+     * @param config  connection configuration containing the flow-control settings
+     */
+    public static void applyFlowControlSettings(SolConnectionFactory factory, ConnectionConfiguration config) {
+        if (config.transportWindowSize() != null) {
+            factory.setReceiveADWindowSize(config.transportWindowSize());
+        }
+        if (config.ackThreshold() != null) {
+            factory.setReceiveAdAckThreshold(config.ackThreshold());
+        }
+        if (config.ackTimerMillis() != null) {
+            factory.setReceiveADAckTimerInMillis(Math.toIntExact(config.ackTimerMillis()));
+        }
     }
 
     /**

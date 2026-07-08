@@ -30,6 +30,7 @@ listener Listener solaceListener = check new Listener(BROKER_URL, {
 
 isolated int queueServiceReceivedMessageCount = 0;
 isolated int topicServiceReceivedMessageCount = 0;
+isolated int flowControlServiceReceivedMessageCount = 0;
 
 final MessageProducer queueProducer = check new (BROKER_URL, {
     destination: {queueName: "service-test-queue"},
@@ -270,4 +271,52 @@ isolated function testServiceDetach() returns error? {
     check solaceListener.attach(consumerSvc, "consumer-svc");
     runtime:sleep(1);
     check solaceListener.detach(consumerSvc);
+}
+
+@test:Config {
+    groups: ["service", "config"]
+}
+isolated function testListenerWithFlowControlSettings() returns error? {
+    Listener msgListener = check new Listener(BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        directTransport: false,
+        transportWindowSize: 50,
+        ackThreshold: 50,
+        ackTimer: 0.5,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+    Service consumerSvc = @ServiceConfig {
+        queueName: "listener-flow-control-queue"
+    } service object {
+        remote function onMessage(Message message) returns error? {
+            lock {
+                flowControlServiceReceivedMessageCount += 1;
+            }
+        }
+    };
+    check msgListener.attach(consumerSvc, "flow-control-svc");
+    check msgListener.'start();
+
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: "listener-flow-control-queue"},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+    check producer->send({payload: TEXT_MESSAGE_CONTENT});
+    check producer->close();
+
+    runtime:sleep(1);
+    lock {
+        test:assertEquals(flowControlServiceReceivedMessageCount, 1,
+                "Should receive a message on a listener with flow control settings");
+    }
+    check msgListener.immediateStop();
 }

@@ -50,6 +50,9 @@ import static io.ballerina.lib.solace.jms.config.ConfigUtils.decimalToMillis;
  * @param auth                    authentication configuration, or {@code null}
  * @param retryConfig             retry configuration for connection attempts, or {@code null}
  * @param secureSocket            SSL/TLS configuration for secure connections, or {@code null}
+ * @param transportWindowSize     max un-acked guaranteed messages in flight (1-255), or {@code null} for default
+ * @param ackThreshold            ack threshold as percentage of window size (1-75), or {@code null} for default
+ * @param ackTimerMillis          ack flush timer in milliseconds, or {@code null} for default
  */
 public record ConnectionConfiguration(
         String messageVpn,
@@ -65,7 +68,10 @@ public record ConnectionConfiguration(
         int compressionLevel,
         AuthConfig auth,
         RetryConfig retryConfig,
-        SecureSocketConfig secureSocket) {
+        SecureSocketConfig secureSocket,
+        Integer transportWindowSize,
+        Integer ackThreshold,
+        Long ackTimerMillis) {
 
     // Configuration field names
     private static final BString MESSAGE_VPN = StringUtils.fromString("messageVpn");
@@ -82,6 +88,9 @@ public record ConnectionConfiguration(
     private static final BString AUTH = StringUtils.fromString("auth");
     private static final BString RETRY_CONFIG = StringUtils.fromString("retryConfig");
     private static final BString SECURE_SOCKET = StringUtils.fromString("secureSocket");
+    private static final BString TRANSPORT_WINDOW_SIZE = StringUtils.fromString("transportWindowSize");
+    private static final BString ACK_THRESHOLD = StringUtils.fromString("ackThreshold");
+    private static final BString ACK_TIMER = StringUtils.fromString("ackTimer");
 
     /**
      * Creates a ConnectionConfiguration from Ballerina configuration map.
@@ -105,7 +114,12 @@ public record ConnectionConfiguration(
                 config.containsKey(RETRY_CONFIG) ?
                         new RetryConfig((BMap<BString, Object>) config.getMapValue(RETRY_CONFIG)) : null,
                 config.containsKey(SECURE_SOCKET) ?
-                        new SecureSocketConfig((BMap<BString, Object>) config.getMapValue(SECURE_SOCKET)) : null
+                        new SecureSocketConfig((BMap<BString, Object>) config.getMapValue(SECURE_SOCKET)) : null,
+                config.containsKey(TRANSPORT_WINDOW_SIZE) ?
+                        config.getIntValue(TRANSPORT_WINDOW_SIZE).intValue() : null,
+                config.containsKey(ACK_THRESHOLD) ? config.getIntValue(ACK_THRESHOLD).intValue() : null,
+                config.containsKey(ACK_TIMER) ?
+                        decimalToMillis(((BDecimal) config.get(ACK_TIMER)).decimalValue()) : null
         );
     }
 

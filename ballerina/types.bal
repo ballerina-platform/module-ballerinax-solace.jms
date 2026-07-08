@@ -178,6 +178,16 @@ type CommonConnectionConfiguration record {
     int compressionLevel = 0;
     # The retry configuration for connection and reconnection attempts
     RetryConfig retryConfig?;
+    # Maximum number of un-acknowledged guaranteed (persistent) messages the broker may have in flight
+    # to this connection at once. Only applies when `directTransport` is `false`. Valid range: 1-255
+    int transportWindowSize?;
+    # Percentage of `transportWindowSize` that must be consumed before an acknowledgement is sent back
+    # to the broker to slide the window forward. Only applies when `directTransport` is `false`.
+    # Valid range: 1-75
+    int ackThreshold?;
+    # Maximum time (in seconds) the client buffers acknowledgements before flushing them to the broker,
+    # independent of `ackThreshold`. Only applies when `directTransport` is `false`. Valid range: 0.02-1.5
+    decimal ackTimer?;
 };
 
 # Represents the configuration for a Solace message producer.

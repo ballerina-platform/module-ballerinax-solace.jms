@@ -63,6 +63,7 @@ public class Listener {
             SolConnectionFactory connectionFactory = SolJmsUtility.createConnectionFactory(connectionProps);
             connectionFactory.setDirectTransport(connConfig.directTransport());
             connectionFactory.setDirectOptimized(connConfig.directOptimized());
+            CommonUtils.applyFlowControlSettings(connectionFactory, connConfig);
             Connection connection = connectionFactory.createConnection();
             bListener.addNativeData(NATIVE_CONNECTION, connection);
             bListener.addNativeData(NATIVE_SERVICE_LIST, new ArrayList<BObject>());

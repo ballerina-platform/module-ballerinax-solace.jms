@@ -14,3 +14,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `jms:Caller` to acknowledge messages and manage transactions within a service
 - Support for basic, Kerberos, and OAuth2 authentication, and TLS secured connections
 - Support for setting a per-message time-to-live via `Message.timeToLive`
+- Support for configuring guaranteed-delivery flow control via `transportWindowSize`, `ackThreshold`, and `ackTimer`

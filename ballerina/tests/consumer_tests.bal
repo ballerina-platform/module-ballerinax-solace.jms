@@ -510,3 +510,126 @@ isolated function testReceiveXmlMessage() returns error? {
     }
     check consumer->close();
 }
+
+@test:Config {groups: ["consumer", "config"]}
+isolated function testConsumerWithFlowControlSettings() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        destination: {queueName: CONSUMER_FLOW_CONTROL_QUEUE}
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        directTransport: false,
+        transportWindowSize: 50,
+        ackThreshold: 50,
+        ackTimer: 0.5,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive a message with flow control settings applied");
+    check consumer->close();
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationWithInvalidTransportWindowSize() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        directTransport: false,
+        transportWindowSize: 300,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error, "Expected validation error for transportWindowSize > 255");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("transportwindowsize"),
+                "Error message should mention transportWindowSize");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationWithInvalidAckThreshold() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        directTransport: false,
+        ackThreshold: 90,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error, "Expected validation error for ackThreshold > 75");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("ackthreshold"),
+                "Error message should mention ackThreshold");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationWithInvalidAckTimer() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        directTransport: false,
+        ackTimer: 2.0,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error, "Expected validation error for ackTimer > 1.5 seconds");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("acktimer"),
+                "Error message should mention ackTimer");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationFlowControlRequiresGuaranteedDelivery() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        transportWindowSize: 50,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error,
+            "Expected validation error when flow control settings are used with directTransport left at default true");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
+}
