@@ -18,10 +18,10 @@
 
 package io.ballerina.lib.solace.jms.config;
 
-import io.ballerina.lib.solace.jms.config.auth.AuthConfig;
-import io.ballerina.lib.solace.jms.config.auth.BasicAuthConfig;
-import io.ballerina.lib.solace.jms.config.auth.KerberosConfig;
-import io.ballerina.lib.solace.jms.config.auth.OAuth2Config;
+import io.ballerina.lib.solace.jms.config.auth.AuthConfiguration;
+import io.ballerina.lib.solace.jms.config.auth.BasicAuthConfiguration;
+import io.ballerina.lib.solace.jms.config.auth.KerberosConfiguration;
+import io.ballerina.lib.solace.jms.config.auth.OAuth2Configuration;
 import io.ballerina.lib.solace.jms.config.retry.RetryConfig;
 import io.ballerina.lib.solace.jms.config.ssl.SecureSocketConfig;
 import io.ballerina.runtime.api.utils.StringUtils;
@@ -37,9 +37,8 @@ import static io.ballerina.lib.solace.jms.config.ConfigUtils.decimalToMillis;
  * Contains connection settings, authentication, retry behavior, and SSL/TLS security options.
  *
  * @param messageVpn              name of message VPN to connect to
- * @param clientId                client identifier, or {@code null} for auto-generated ID
+ * @param clientName              client identifier, or {@code null} for auto-generated ID
  * @param clientDescription       description for application client
- * @param allowDuplicateClientId  {@code true} to allow same client ID across multiple connections
  * @param enableDynamicDurables   {@code true} to automatically create queues/endpoints on the broker
  * @param directTransport         {@code true} to use direct transport (at-most-once), {@code false} for guaranteed
  * @param directOptimized         {@code true} to optimize direct transport delivery
@@ -56,9 +55,8 @@ import static io.ballerina.lib.solace.jms.config.ConfigUtils.decimalToMillis;
  */
 public record ConnectionConfiguration(
         String messageVpn,
-        String clientId,
+        String clientName,
         String clientDescription,
-        boolean allowDuplicateClientId,
         boolean enableDynamicDurables,
         boolean directTransport,
         boolean directOptimized,
@@ -66,7 +64,7 @@ public record ConnectionConfiguration(
         long connectTimeout,
         long readTimeout,
         int compressionLevel,
-        AuthConfig auth,
+        AuthConfiguration auth,
         RetryConfig retryConfig,
         SecureSocketConfig secureSocket,
         Integer transportWindowSize,
@@ -75,9 +73,8 @@ public record ConnectionConfiguration(
 
     // Configuration field names
     private static final BString MESSAGE_VPN = StringUtils.fromString("messageVpn");
-    private static final BString CLIENT_ID = StringUtils.fromString("clientId");
+    private static final BString CLIENT_NAME = StringUtils.fromString("clientName");
     private static final BString CLIENT_DESCRIPTION = StringUtils.fromString("clientDescription");
-    private static final BString ALLOW_DUPLICATE_CLIENT_ID = StringUtils.fromString("allowDuplicateClientId");
     private static final BString ENABLE_DYNAMIC_DURABLES = StringUtils.fromString("enableDynamicDurables");
     private static final BString DIRECT_TRANSPORT = StringUtils.fromString("directTransport");
     private static final BString DIRECT_OPTIMIZED = StringUtils.fromString("directOptimized");
@@ -100,9 +97,8 @@ public record ConnectionConfiguration(
     public ConnectionConfiguration(BMap<BString, Object> config) {
         this(
                 config.getStringValue(MESSAGE_VPN).getValue(),
-                config.containsKey(CLIENT_ID) ? config.getStringValue(CLIENT_ID).getValue() : null,
+                config.containsKey(CLIENT_NAME) ? config.getStringValue(CLIENT_NAME).getValue() : null,
                 config.getStringValue(CLIENT_DESCRIPTION).getValue(),
-                config.getBooleanValue(ALLOW_DUPLICATE_CLIENT_ID),
                 config.getBooleanValue(ENABLE_DYNAMIC_DURABLES),
                 config.getBooleanValue(DIRECT_TRANSPORT),
                 config.getBooleanValue(DIRECT_OPTIMIZED),
@@ -124,19 +120,20 @@ public record ConnectionConfiguration(
     }
 
     /**
-     * Determines and creates appropriate AuthConfig based on configuration.
+     * Determines and creates appropriate AuthConfiguration based on configuration.
      *
      * @param authMap authentication configuration map
-     * @return AuthConfig instance (BasicAuthConfig, KerberosConfig, or OAuth2Config), or {@code null}
+     * @return AuthConfiguration instance (BasicAuthConfiguration, KerberosConfiguration, or OAuth2Configuration),
+     *         or {@code null}
      */
-    private static AuthConfig getAuthConfig(BMap<BString, Object> authMap) {
+    private static AuthConfiguration getAuthConfig(BMap<BString, Object> authMap) {
         // Check which type of auth config by inspecting fields
         if (authMap.containsKey(StringUtils.fromString("username"))) {
-            return new BasicAuthConfig(authMap);
+            return new BasicAuthConfiguration(authMap);
         } else if (authMap.containsKey(StringUtils.fromString("mutualAuthentication"))) {
-            return new KerberosConfig(authMap);
+            return new KerberosConfiguration(authMap);
         } else if (authMap.containsKey(StringUtils.fromString("issuer"))) {
-            return new OAuth2Config(authMap);
+            return new OAuth2Configuration(authMap);
         }
         return null;
     }

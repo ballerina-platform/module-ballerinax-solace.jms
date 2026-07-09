@@ -62,18 +62,16 @@ type CommonConnectionConfiguration record {
     string messageVpn = "default";
     # The authentication configuration. Supports basic authentication, Kerberos, and OAuth2.
     # For client certificate authentication, configure the `secureSocket.keyStore` field
-    BasicAuthConfig|KerberosConfig|OAuth2Config auth?;
+    AuthConfiguration auth?;
     # The SSL/TLS configuration for secure connections
     SecureSocket secureSocket?;
     # Enables transacted messaging when set to `true`. In transacted mode, messages are sent and received
     # within a transaction context, requiring explicit commit or rollback
     boolean transacted = false;
-    # The client identifier. If not specified, a unique client ID is auto-generated
-    string clientId?;
+    # A unique client name to use to register to the appliance. If not specified, a unique client ID is auto-generated
+    string clientName?;
     # A description for the application client
-    string clientDescription = "JNDI";
-    # Specifies whether to allow the same client ID to be used across multiple connections
-    boolean allowDuplicateClientId = false;
+    string clientDescription = "Ballerina Solace JMS Connector";
     # Enables automatic creation of durable queues and topic endpoints on the broker
     boolean enableDynamicDurables = false;
     # Enables direct transport mode for message delivery. When `true`, uses direct (at-most-once) delivery.
@@ -98,9 +96,15 @@ type CommonConnectionConfiguration record {
 };
 ```
 
-- `BasicAuthConfig` record represents the basic authentication credentials for connecting to a Solace broker.
+- `AuthConfiguration` represents the authentication configuration for connecting to a Solace broker.
+It is a union of `BasicAuthConfiguration`, `KerberosConfiguration`, and `OAuth2Configuration`.
 ```ballerina
-public type BasicAuthConfig record {|
+public type AuthConfiguration BasicAuthConfiguration|KerberosConfiguration|OAuth2Configuration;
+```
+
+- `BasicAuthConfiguration` record represents the basic authentication credentials for connecting to a Solace broker.
+```ballerina
+public type BasicAuthConfiguration record {|
     # The username for authentication
     string username;
     # The password for authentication
@@ -108,21 +112,21 @@ public type BasicAuthConfig record {|
 |};
 ```
 
-- `KerberosConfig` record represents the Kerberos (GSS-KRB) authentication configuration for connecting to a Solace broker. 
+- `KerberosConfiguration` record represents the Kerberos (GSS-KRB) authentication configuration for connecting to a Solace broker. 
 ```ballerina
-public type KerberosConfig record {|
+public type KerberosConfiguration record {|
     # The Kerberos service name used during authentication
     string serviceName = "solace";
     # The JAAS login context name to use for authentication
     string jaasLoginContext = "SolaceGSS";
     # Specifies whether to enable Kerberos mutual authentication
-    boolean mutualAuthentication = true;
+    boolean mutualAuthentication = false;
     # Specifies whether to enable automatic reload of the JAAS configuration file
-    boolean jaasConfigReloadEnabled = false;
+    boolean jaasConfigFileReloadEnabled = false;
 |};
 ```
 
-- `OAuth2Config` represents the OAuth 2.0 authentication configuration for connecting to a Solace
+- `OAuth2Configuration` represents the OAuth 2.0 authentication configuration for connecting to a Solace
 broker. It is a union of `OAuth2AccessTokenAuth` and `OidcIdTokenAuth` - exactly one of them must
 be provided, and which one is used determines whether an OAuth 2.0 access token or an OIDC ID
 token is presented to the broker.
@@ -141,7 +145,7 @@ public type OidcIdTokenAuth record {|
     string oidcToken;
 |};
 
-public type OAuth2Config OAuth2AccessTokenAuth|OidcIdTokenAuth;
+public type OAuth2Configuration OAuth2AccessTokenAuth|OidcIdTokenAuth;
 ```
 
 - `SecureSocket` record represents the SSL/TLS configuration for secure connections to a Solace broker.
@@ -152,9 +156,8 @@ public type SecureSocket record {|
     # The key store configuration containing the client's private key and certificate.
     # When configured, enables client certificate authentication
     KeyStore keyStore?;
-    # The list of SSL/TLS protocol versions to enable for the connection.
-    # It is recommended to use only TLSv12 or higher for security
-    Protocol[] protocols = [SSLv30, TLSv10, TLSv11, TLSv12];
+    # The SSL/TLS protocols NOT to use
+    Protocol[] excludedProtocols = [SSLv2Hello];
     # The list of cipher suites to enable for the connection.
     # If not specified, the default cipher suites for the JVM are used
     SslCipherSuite[] cipherSuites?;
@@ -162,14 +165,19 @@ public type SecureSocket record {|
     # If specified, the broker certificate's common name must match one of these values
     string[] trustedCommonNames?;
     # The certificate validation settings
-    record {|
-        # Enable certificate validation
-        boolean enabled = true;
-        # Specifies whether to validate the certificate's expiration date
-        boolean validateDate = true;
-        # Specifies whether to validate that the certificate's common name matches the broker hostname
-        boolean validateHost = true;
-    |} validation = {};
+    CertificateValidation validation = {};
+|};
+```
+
+- `CertificateValidation` record represents the certificate validation settings for SSL/TLS connections to a Solace broker.
+```ballerina
+public type CertificateValidation record {|
+    # Enable certificate validation
+    boolean enabled = true;
+    # Specifies whether to validate the certificate's expiration date
+    boolean validateDate = true;
+    # Specifies whether to validate that the certificate's common name matches the broker hostname
+    boolean validateHostname = true;
 |};
 ```
 

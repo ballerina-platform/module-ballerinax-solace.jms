@@ -26,7 +26,7 @@ isolated function validateConfigurations(CommonConnectionConfiguration config) r
 
     // Validate auth configurations
     var authConfig = config.auth;
-    if authConfig is BasicAuthConfig {
+    if authConfig is BasicAuthConfiguration {
         string username = authConfig.username;
         if username.length() > 32 {
             return error Error("Username cannot exceed 32 characters");

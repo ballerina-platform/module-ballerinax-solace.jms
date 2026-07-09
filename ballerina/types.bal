@@ -145,18 +145,16 @@ type CommonConnectionConfiguration record {
     string messageVpn = "default";
     # The authentication configuration. Supports basic authentication, Kerberos, and OAuth2.
     # For client certificate authentication, configure the `secureSocket.keyStore` field
-    BasicAuthConfig|KerberosConfig|OAuth2Config auth?;
+    AuthConfiguration auth?;
     # The SSL/TLS configuration for secure connections
     SecureSocket secureSocket?;
     # Enables transacted messaging when set to `true`. In transacted mode, messages are sent and received
     # within a transaction context, requiring explicit commit or rollback
     boolean transacted = false;
-    # The client identifier. If not specified, a unique client ID is auto-generated
-    string clientId?;
+    # A unique client name to use to register to the appliance. If not specified, a unique client ID is auto-generated
+    string clientName?;
     # A description for the application client
-    string clientDescription = "JNDI";
-    # Specifies whether to allow the same client ID to be used across multiple connections
-    boolean allowDuplicateClientId = false;
+    string clientDescription = "Ballerina Solace JMS Connector";
     # Enables automatic creation of durable queues and topic endpoints on the broker
     boolean enableDynamicDurables = false;
     # Enables direct transport mode for message delivery. When `true`, uses direct (at-most-once) delivery.
@@ -211,7 +209,7 @@ public type ListenerConfiguration record {|
 |};
 
 # Represents the basic authentication credentials for connecting to a Solace broker.
-public type BasicAuthConfig record {|
+public type BasicAuthConfiguration record {|
     # The username for authentication
     string username;
     # The password for authentication
@@ -219,15 +217,15 @@ public type BasicAuthConfig record {|
 |};
 
 # Represents the Kerberos (GSS-KRB) authentication configuration for connecting to a Solace broker
-public type KerberosConfig record {|
+public type KerberosConfiguration record {|
     # The Kerberos service name used during authentication
     string serviceName = "solace";
     # The JAAS login context name to use for authentication
     string jaasLoginContext = "SolaceGSS";
     # Specifies whether to enable Kerberos mutual authentication
-    boolean mutualAuthentication = true;
+    boolean mutualAuthentication = false;
     # Specifies whether to enable automatic reload of the JAAS configuration file
-    boolean jaasConfigReloadEnabled = false;
+    boolean jaasConfigFileReloadEnabled = false;
 |};
 
 # Represents the OAuth 2.0 Access Token authentication configuration for connecting to a Solace broker
@@ -248,7 +246,11 @@ public type OidcIdTokenAuth record {|
 
 # Represents the OAuth 2.0 authentication configuration for connecting to a Solace broker
 # (mutually exclusive - use either access token or ID token)
-public type OAuth2Config OAuth2AccessTokenAuth|OidcIdTokenAuth;
+public type OAuth2Configuration OAuth2AccessTokenAuth|OidcIdTokenAuth;
+
+# Represents the authentication configuration for connecting to a Solace broker
+# (basic, Kerberos, or OAuth2)
+public type AuthConfiguration BasicAuthConfiguration|KerberosConfiguration|OAuth2Configuration;
 
 # Represents the retry configuration for connection and reconnection attempts to a Solace broker
 public type RetryConfig record {|
@@ -273,9 +275,11 @@ public const TLSv10 = "tlsv1";
 public const TLSv11 = "tlsv11";
 # TLS protocol version 1.2
 public const TLSv12 = "tlsv12";
+# SSL protocol version SSLv2Hello
+public const SSLv2Hello = "SSLv2Hello";
 
 # Represents the supported SSL/TLS protocol versions.
-public type Protocol SSLv30|TLSv10|TLSv11|TLSv12;
+public type Protocol SSLv30|TLSv10|TLSv11|TLSv12|SSLv2Hello;
 
 # Cipher suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
 public const ECDHE_RSA_AES256_CBC_SHA384 = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384";
@@ -303,6 +307,16 @@ public type SslCipherSuite ECDHE_RSA_AES256_CBC_SHA384|ECDHE_RSA_AES256_CBC_SHA|
     ECDHE_RSA_3DES_EDE_CBC_SHA|RSA_3DES_EDE_CBC_SHA|ECDHE_RSA_AES128_CBC_SHA|ECDHE_RSA_AES128_CBC_SHA256|RSA_AES128_CBC_SHA256|
     RSA_AES128_CBC_SHA;
 
+# Represents the certificate validation settings for SSL/TLS connections to a Solace broker
+public type CertificateValidation record {|
+    # Enable certificate validation
+    boolean enabled = true;
+    # Specifies whether to validate the certificate's expiration date
+    boolean validateDate = true;
+    # Specifies whether to validate that the certificate's common name matches the broker hostname
+    boolean validateHostname = true;
+|};
+
 # Represents the SSL/TLS configuration for secure connections to a Solace broker
 public type SecureSocket record {|
     # The trust store configuration containing trusted CA certificates
@@ -310,9 +324,8 @@ public type SecureSocket record {|
     # The key store configuration containing the client's private key and certificate.
     # When configured, enables client certificate authentication
     KeyStore keyStore?;
-    # The list of SSL/TLS protocol versions to enable for the connection.
-    # It is recommended to use only TLSv12 or higher for security
-    Protocol[] protocols = [SSLv30, TLSv10, TLSv11, TLSv12];
+    # The SSL/TLS protocols NOT to use
+    Protocol[] excludedProtocols = [SSLv2Hello];
     # The list of cipher suites to enable for the connection.
     # If not specified, the default cipher suites for the JVM are used
     SslCipherSuite[] cipherSuites?;
@@ -320,14 +333,7 @@ public type SecureSocket record {|
     # If specified, the broker certificate's common name must match one of these values
     string[] trustedCommonNames?;
     # The certificate validation settings
-    record {|
-        # Enable certificate validation
-        boolean enabled = true;
-        # Specifies whether to validate the certificate's expiration date
-        boolean validateDate = true;
-        # Specifies whether to validate that the certificate's common name matches the broker hostname
-        boolean validateHost = true;
-    |} validation = {};
+    CertificateValidation validation = {};
 |};
 
 # Java KeyStore format

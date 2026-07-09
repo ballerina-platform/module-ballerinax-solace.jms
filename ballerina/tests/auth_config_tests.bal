@@ -41,3 +41,46 @@ isolated function testOidcIdTokenAuthIsRecognized() returns error? {
 
     test:assertTrue(consumer is Error, "Init with OIDC ID-token auth over a non-TLS connection should fail");
 }
+
+// ========================================
+// Kerberos Auth Tests
+// ========================================
+
+@test:Config {groups: ["consumer", "auth", "negative"]}
+isolated function testConsumerKerberosAuthIsRecognized() returns error? {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            serviceName: "solace",
+            jaasLoginContext: "SolaceGSS",
+            mutualAuthentication: false,
+            jaasConfigFileReloadEnabled: true
+        },
+        subscriptionConfig: {queueName: CONSUMER_INIT_QUEUE}
+    });
+
+    test:assertTrue(consumer is Error, "Init with Kerberos auth against a broker with no GSS-KRB profile should fail");
+}
+
+// ========================================
+// KerberosConfiguration default-value regression test
+// ========================================
+
+@test:Config {groups: ["auth"]}
+isolated function testKerberosConfigMutualAuthenticationDefaultsToFalse() {
+    KerberosConfiguration kerberosConfig = {};
+    test:assertFalse(kerberosConfig.mutualAuthentication,
+            "mutualAuthentication should default to false");
+}
+
+// ========================================
+// CertificateValidation named-type tests
+// ========================================
+
+@test:Config {groups: ["auth", "tls"]}
+isolated function testCertificateValidationDefaults() {
+    CertificateValidation validation = {};
+    test:assertTrue(validation.enabled);
+    test:assertTrue(validation.validateDate);
+    test:assertTrue(validation.validateHostname);
+}

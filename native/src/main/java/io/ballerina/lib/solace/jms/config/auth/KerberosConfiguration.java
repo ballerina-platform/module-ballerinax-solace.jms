@@ -28,30 +28,31 @@ import io.ballerina.runtime.api.values.BString;
  * @param mutualAuthentication     {@code true} to enable Kerberos mutual authentication
  * @param serviceName              Kerberos service name used during authentication
  * @param jaasLoginContext         JAAS login context name to use for authentication
- * @param jaasConfigReloadEnabled  {@code true} to enable automatic reload of JAAS configuration file
+ * @param jaasConfigFileReloadEnabled  {@code true} to enable automatic reload of JAAS configuration file
  */
-public record KerberosConfig(
+public record KerberosConfiguration(
         boolean mutualAuthentication,
         String serviceName,
         String jaasLoginContext,
-        boolean jaasConfigReloadEnabled) implements AuthConfig {
+        boolean jaasConfigFileReloadEnabled) implements AuthConfiguration {
 
     private static final BString MUTUAL_AUTHENTICATION = StringUtils.fromString("mutualAuthentication");
     private static final BString SERVICE_NAME = StringUtils.fromString("serviceName");
     private static final BString JAAS_LOGIN_CONTEXT = StringUtils.fromString("jaasLoginContext");
-    private static final BString JAAS_CONFIG_RELOAD_ENABLED = StringUtils.fromString("jaasConfigReloadEnabled");
+    private static final BString JAAS_CONFIG_FILE_RELOAD_ENABLED =
+            StringUtils.fromString("jaasConfigFileReloadEnabled");
 
     /**
-     * Creates a KerberosConfig from Ballerina configuration map.
+     * Creates a KerberosConfiguration from Ballerina configuration map.
      *
      * @param config Ballerina configuration map
      */
-    public KerberosConfig(BMap<BString, Object> config) {
+    public KerberosConfiguration(BMap<BString, Object> config) {
         this(
                 config.getBooleanValue(MUTUAL_AUTHENTICATION),
                 config.getStringValue(SERVICE_NAME).getValue(),
                 config.getStringValue(JAAS_LOGIN_CONTEXT).getValue(),
-                config.getBooleanValue(JAAS_CONFIG_RELOAD_ENABLED)
+                config.getBooleanValue(JAAS_CONFIG_FILE_RELOAD_ENABLED)
         );
     }
 }

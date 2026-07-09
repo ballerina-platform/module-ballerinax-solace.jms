@@ -21,9 +21,9 @@ package io.ballerina.lib.solace.jms;
 import com.solacesystems.jms.SolConnectionFactory;
 import com.solacesystems.jms.SupportedProperty;
 import io.ballerina.lib.solace.jms.config.ConnectionConfiguration;
-import io.ballerina.lib.solace.jms.config.auth.BasicAuthConfig;
-import io.ballerina.lib.solace.jms.config.auth.KerberosConfig;
-import io.ballerina.lib.solace.jms.config.auth.OAuth2Config;
+import io.ballerina.lib.solace.jms.config.auth.BasicAuthConfiguration;
+import io.ballerina.lib.solace.jms.config.auth.KerberosConfiguration;
+import io.ballerina.lib.solace.jms.config.auth.OAuth2Configuration;
 import io.ballerina.lib.solace.jms.config.retry.RetryConfig;
 import io.ballerina.lib.solace.jms.config.ssl.SecureSocketConfig;
 import io.ballerina.lib.solace.jms.consumer.ConsumerType;
@@ -64,8 +64,8 @@ public final class CommonUtils {
         props.put(SupportedProperty.SOLACE_JMS_VPN, config.messageVpn());
         props.put(SupportedProperty.SOLACE_JMS_DYNAMIC_DURABLES, config.enableDynamicDurables());
 
-        if (config.clientId() != null) {
-            props.put(SupportedProperty.SOLACE_JMS_JNDI_CLIENT_ID, config.clientId());
+        if (config.clientName() != null) {
+            props.put(SupportedProperty.SOLACE_JMS_JNDI_CLIENT_ID, config.clientName());
         }
         if (config.clientDescription() != null && !config.clientDescription().isEmpty()) {
             props.put(SupportedProperty.SOLACE_JMS_JNDI_CLIENT_DESCRIPTION, config.clientDescription());
@@ -92,7 +92,7 @@ public final class CommonUtils {
         // Authentication priority: explicit auth config > client certificate (keyStore) > basic auth (default)
         if (config.auth() != null) {
             switch (config.auth()) {
-                case BasicAuthConfig basic -> {
+                case BasicAuthConfiguration basic -> {
                     props.put(SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME,
                             SupportedProperty.AUTHENTICATION_SCHEME_BASIC);
                     props.put(Context.SECURITY_PRINCIPAL, basic.username());
@@ -100,7 +100,7 @@ public final class CommonUtils {
                         props.put(Context.SECURITY_CREDENTIALS, basic.password());
                     }
                 }
-                case KerberosConfig kerberos -> {
+                case KerberosConfiguration kerberos -> {
                     props.put(SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME,
                             SupportedProperty.AUTHENTICATION_SCHEME_GSS_KRB);
                     props.put(SupportedProperty.SOLACE_JMS_KRB_MUTUAL_AUTHENTICATION,
@@ -109,8 +109,10 @@ public final class CommonUtils {
                     if (kerberos.jaasLoginContext() != null) {
                         props.put(SupportedProperty.SOLACE_JMS_JAAS_LOGIN_CONTEXT, kerberos.jaasLoginContext());
                     }
+                    props.put(SupportedProperty.SOLACE_JMS_JAAS_CONFIG_FILE_RELOAD_ENABLED,
+                            kerberos.jaasConfigFileReloadEnabled());
                 }
-                case OAuth2Config oauth -> {
+                case OAuth2Configuration oauth -> {
                     props.put(SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME,
                             SupportedProperty.AUTHENTICATION_SCHEME_OAUTH2);
                     props.put(SupportedProperty.SOLACE_JMS_OAUTH2_ISSUER_IDENTIFIER, oauth.issuer());
@@ -159,10 +161,11 @@ public final class CommonUtils {
             props.put(SupportedProperty.SOLACE_JMS_SSL_VALIDATE_CERTIFICATE_DATE,
                     sslConfig.validation().validateDate());
             props.put(SupportedProperty.SOLACE_JMS_SSL_VALIDATE_CERTIFICATE_HOST,
-                    sslConfig.validation().validateHost());
+                    sslConfig.validation().validateHostname());
 
-            if (sslConfig.protocols() != null && !sslConfig.protocols().isEmpty()) {
-                props.put(SupportedProperty.SOLACE_JMS_SSL_PROTOCOL, String.join(",", sslConfig.protocols()));
+            if (sslConfig.excludedProtocols() != null && !sslConfig.excludedProtocols().isEmpty()) {
+                props.put(SupportedProperty.SOLACE_JMS_SSL_EXCLUDED_PROTOCOLS,
+                        String.join(",", sslConfig.excludedProtocols()));
             }
 
             if (sslConfig.cipherSuites() != null && !sslConfig.cipherSuites().isEmpty()) {
@@ -312,6 +315,7 @@ public final class CommonUtils {
                 case "tlsv1" -> "TLSv1";
                 case "tlsv11" -> "TLSv1.1";
                 case "tlsv12" -> "TLSv1.2";
+                case "SSLv2Hello" -> "SSLv2Hello";
                 default -> throw new IllegalArgumentException("Unsupported protocol: " + protocol);
             };
         }).toArray(String[]::new);

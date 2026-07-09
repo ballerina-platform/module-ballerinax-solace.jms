@@ -265,7 +265,7 @@ isolated function testProducerWithCustomClientId() returns error? {
     MessageProducer producer = check new (BROKER_URL, {
         destination: {queueName: TEST_QUEUE},
         messageVpn: MESSAGE_VPN,
-        clientId: "test-client-123",
+        clientName: "test-client-123",
         auth: {
             username: BROKER_USERNAME,
             password: BROKER_PASSWORD
