@@ -175,7 +175,7 @@ type CommonConnectionConfiguration record {
     # Valid range is 0-9, where 0 means no compression. Higher values provide better compression at the slower throughput
     int compressionLevel = 0;
     # The retry configuration for connection and reconnection attempts
-    RetryConfig retryConfig?;
+    RetryConfiguration retryConfig?;
     # Maximum number of un-acknowledged guaranteed (persistent) messages the broker may have in flight
     # to this connection at once. Only applies when `directTransport` is `false`. Valid range: 1-255
     int transportWindowSize?;
@@ -253,7 +253,7 @@ public type OAuth2Configuration OAuth2AccessTokenAuth|OidcIdTokenAuth;
 public type AuthConfiguration BasicAuthConfiguration|KerberosConfiguration|OAuth2Configuration;
 
 # Represents the retry configuration for connection and reconnection attempts to a Solace broker
-public type RetryConfig record {|
+public type RetryConfiguration record {|
     # The number of times to retry connecting to the broker during initial connection.
     # A value of -1 means retry forever, 0 means no retries (fail immediately on first failure)
     int connectRetries = 0;
@@ -262,7 +262,7 @@ public type RetryConfig record {|
     int connectRetriesPerHost = 0;
     # The number of times to retry reconnecting after an established connection is lost.
     # A value of -1 means retry forever
-    int reconnectRetries = 20;
+    int reconnectRetries = 3;
     # The time to wait between reconnection attempts, in seconds
     decimal reconnectRetryWait = 3.0;
 |};

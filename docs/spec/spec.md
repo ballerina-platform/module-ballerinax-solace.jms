@@ -92,7 +92,7 @@ type CommonConnectionConfiguration record {
     # Valid range is 0-9, where 0 means no compression. Higher values provide better compression at the slower throughput
     int compressionLevel = 0;
     # The retry configuration for connection and reconnection attempts
-    RetryConfig retryConfig?;
+    RetryConfiguration retryConfig?;
 };
 ```
 
@@ -223,9 +223,9 @@ public type SslCipherSuite ECDHE_RSA_AES256_CBC_SHA384|ECDHE_RSA_AES256_CBC_SHA|
     RSA_AES128_CBC_SHA;
 ```
 
-- `RetryConfig` record represents the retry configuration for connection and reconnection attempts to a Solace broker. 
+- `RetryConfiguration` record represents the retry configuration for connection and reconnection attempts to a Solace broker. 
 ```ballerina
-public type RetryConfig record {|
+public type RetryConfiguration record {|
     # The number of times to retry connecting to the broker during initial connection.
     # A value of -1 means retry forever, 0 means no retries (fail immediately on first failure)
     int connectRetries = 0;
@@ -234,7 +234,7 @@ public type RetryConfig record {|
     int connectRetriesPerHost = 0;
     # The number of times to retry reconnecting after an established connection is lost.
     # A value of -1 means retry forever
-    int reconnectRetries = 20;
+    int reconnectRetries = 3;
     # The time to wait between reconnection attempts, in seconds
     decimal reconnectRetryWait = 3.0;
 |};
