@@ -133,7 +133,9 @@ isolated function testSendMessageWithProperties() returns error? {
         properties: {
             "priority": 5,
             "source": "ballerina-test",
-            "urgent": true
+            "urgent": true,
+            "version": <byte>1,
+            "ratio": <float>0.75
         }
     };
     check producer->send(message);

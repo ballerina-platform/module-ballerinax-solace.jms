@@ -330,7 +330,9 @@ isolated function testReceiveMessageWithProperties() returns error? {
         properties: {
             "priority": "high",
             "timestamp": 123456789,
-            "enabled": true
+            "enabled": true,
+            "retryCount": <byte>3,
+            "score": <float>4.5
         }
     };
     check producer->send(message);
@@ -357,6 +359,8 @@ isolated function testReceiveMessageWithProperties() returns error? {
             test:assertEquals(receivedMessage.properties["priority"], "high");
             test:assertEquals(receivedMessage.properties["timestamp"], 123456789);
             test:assertEquals(receivedMessage.properties["enabled"], true);
+            test:assertEquals(receivedMessage.properties["retryCount"], <byte>3);
+            test:assertEquals(receivedMessage.properties["score"], <float>4.5);
         }
     }
     check consumer->close();

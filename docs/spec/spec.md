@@ -240,9 +240,9 @@ public type RetryConfiguration record {|
 |};
 ```
 
-- `CommonSubscriptionConfig` record represents the common configurations related to the Solace queue or topic subscription.
+- `CommonConsumerConfiguration` record represents the common configurations related to the Solace queue or topic subscription.
 ```ballerina
-type CommonSubscriptionConfig record {|
+public type CommonConsumerConfiguration record {|
     # Configuration indicating how messages received by the session will be acknowledged
     AcknowledgementMode ackMode = AUTO_ACKNOWLEDGE;
     # Only messages with properties matching the message selector expression are delivered. 
@@ -279,9 +279,9 @@ public enum AcknowledgementMode {
 ```ballerina
 public enum ConsumerType {
     # Represents JMS durable subscriber
-    DURABLE = "DURABLE",
+    DURABLE,
     # Represents JMS default consumer
-    DEFAULT = "DEFAULT"
+    DEFAULT
 }
 ```
 
@@ -444,23 +444,28 @@ The `jms:MessageConsumer` is used to receive messages from a Solace destination.
 public type ConsumerConfiguration record {|
     *CommonConnectionConfiguration;
     # The subscription configuration specifying either a queue or topic to consume messages from
-    QueueConfig|TopicConfig subscriptionConfig;
+    SubscriptionConfiguration subscriptionConfig;
 |};
 ```
 
-- `QueueConfig` record represents configurations for a Solace queue subscription.
+- `SubscriptionConfiguration` represents the subscription configuration, either a queue or a topic.
 ```ballerina
-public type QueueConfig record {|
-    *CommonSubscriptionConfig;
+public type SubscriptionConfiguration QueueConfiguration|TopicConfiguration;
+```
+
+- `QueueConfiguration` record represents configurations for a Solace queue subscription.
+```ballerina
+public type QueueConfiguration record {|
+    *CommonConsumerConfiguration;
     # The name of the queue to consume messages from
     string queueName;
 |};
 ```
 
-- `TopicConfig` record represents configurations for Solace topic subscription.
+- `TopicConfiguration` record represents configurations for Solace topic subscription.
 ```ballerina
-public type TopicConfig record {|
-    *CommonSubscriptionConfig;
+public type TopicConfiguration record {|
+    *CommonConsumerConfiguration;
     # The name of the topic to subscribe to
     string topicName;
     # The message consumer type
@@ -680,22 +685,22 @@ public annotation ServiceConfiguration ServiceConfig on service;
 
 - `ServiceConfiguration` type defines the service configuration types for a Solace service.
 ```ballerina
-public type ServiceConfiguration QueueServiceConfig|TopicServiceConfig;
+public type ServiceConfiguration QueueServiceConfiguration|TopicServiceConfiguration;
 ```
 
-- `QueueServiceConfig` record represents configurations for a service configurations related to solace queue subscription.
+- `QueueServiceConfiguration` record represents configurations for a service configurations related to solace queue subscription.
 ```ballerina
-public type QueueServiceConfig record {|
-    *CommonServiceConfig;
+public type QueueServiceConfiguration record {|
+    *CommonServiceConfiguration;
     # The name of the queue to consume messages from
     string queueName;
 |};
 ```
 
-- `TopicServiceConfig` record represents configurations for a service configurations related to solace topic subscription.
+- `TopicServiceConfiguration` record represents configurations for a service configurations related to solace topic subscription.
 ```ballerina
-public type TopicServiceConfig record {|
-    *CommonServiceConfig;
+public type TopicServiceConfiguration record {|
+    *CommonServiceConfiguration;
     # The name of the topic to subscribe to
     string topicName;
     # The message consumer type

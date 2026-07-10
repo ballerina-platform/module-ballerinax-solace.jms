@@ -43,19 +43,19 @@ public enum AcknowledgementMode {
 # Defines the supported JMS message consumer types.
 public enum ConsumerType {
     # Represents JMS durable subscriber
-    DURABLE = "DURABLE",
+    DURABLE,
     # Represents JMS default consumer
-    DEFAULT = "DEFAULT"
+    DEFAULT
 }
 
 # Common configurations related to the Solace queue or topic subscription.
 #
 # + ackMode - Configuration indicating how messages received by the session will be acknowledged
-# + messageSelector - Only messages with properties matching the message selector expression are delivered. 
+# + messageSelector - Only messages with properties matching the message selector expression are delivered.
 # If this value is not set that indicates that there is no message selector for the message consumer
 # For example, to only receive messages with a property `priority` set to `'high'`, use:
 # `"priority = 'high'"`. If this value is not set, all messages in the queue will be delivered.
-type CommonSubscriptionConfig record {|
+public type CommonConsumerConfiguration record {|
     AcknowledgementMode ackMode = AUTO_ACKNOWLEDGE;
     string messageSelector?;
 |};
@@ -63,8 +63,8 @@ type CommonSubscriptionConfig record {|
 # Represents configurations for a Solace queue subscription.
 #
 # + queueName - The name of the queue to consume messages from
-public type QueueConfig record {|
-    *CommonSubscriptionConfig;
+public type QueueConfiguration record {|
+    *CommonConsumerConfiguration;
     string queueName;
 |};
 
@@ -78,24 +78,27 @@ public type QueueConfig record {|
 # `"priority = 'high'"`. If this value is not set, all messages in the queue will be delivered.
 # + noLocal - If true then any messages published to the topic using this session's connection, or any other connection
 # with the same client identifier, will not be added to the durable subscription.
-public type TopicConfig record {|
-    *CommonSubscriptionConfig;
+public type TopicConfiguration record {|
+    *CommonConsumerConfiguration;
     string topicName;
     ConsumerType consumerType = DEFAULT;
     string subscriberName?;
     boolean noLocal = false;
 |};
 
+# Consumer subscription configuration (queue or topic).
+public type SubscriptionConfiguration QueueConfiguration|TopicConfiguration;
+
 # Common configurations related to the Solace service configuration related to queue or topic subscription.
-type CommonServiceConfig record {|
-    *CommonSubscriptionConfig;
+type CommonServiceConfiguration record {|
+    *CommonConsumerConfiguration;
 |};
 
 # Represents configurations for a service configurations related to solace queue subscription.
 #
 # + queueName - The name of the queue to consume messages from
-public type QueueServiceConfig record {|
-    *CommonServiceConfig;
+public type QueueServiceConfiguration record {|
+    *CommonServiceConfiguration;
     string queueName;
 |};
 
@@ -109,8 +112,8 @@ public type QueueServiceConfig record {|
 # `"priority = 'high'"`. If this value is not set, all messages in the queue will be delivered.
 # + noLocal - If true then any messages published to the topic using this session's connection, or any other connection
 # with the same client identifier, will not be added to the durable subscription.
-public type TopicServiceConfig record {|
-    *CommonServiceConfig;
+public type TopicServiceConfiguration record {|
+    *CommonServiceConfiguration;
     string topicName;
     ConsumerType consumerType = DEFAULT;
     string subscriberName?;
@@ -118,7 +121,7 @@ public type TopicServiceConfig record {|
 |};
 
 # The service configuration type for the `jms:Service`.
-public type ServiceConfiguration QueueServiceConfig|TopicServiceConfig;
+public type ServiceConfiguration QueueServiceConfiguration|TopicServiceConfiguration;
 
 # Annotation to configure the `jms:Service`.
 public annotation ServiceConfiguration ServiceConfig on service;
@@ -200,7 +203,7 @@ public type ProducerConfiguration record {|
 public type ConsumerConfiguration record {|
     *CommonConnectionConfiguration;
     # The subscription configuration specifying either a queue or topic to consume messages from
-    QueueConfig|TopicConfig subscriptionConfig;
+    SubscriptionConfiguration subscriptionConfig;
 |};
 
 # Represents the listener configuration for Ballerina Solace listener.
@@ -377,7 +380,7 @@ public const SOLACE_JMS_PROP_ISXML = "JMS_Solace_isXML";
 public type Property boolean|int|byte|float|string;
 
 # Represents the allowed value types for entries in the map content of a JMS MapMessage.
-public type Value Property|byte[];
+public type Value boolean|int|byte|float|string|byte[];
 
 # Represent the Message used to send and receive content from the Solace broker.
 public type Message record {|
