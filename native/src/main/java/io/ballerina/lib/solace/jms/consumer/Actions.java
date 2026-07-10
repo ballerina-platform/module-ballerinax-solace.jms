@@ -23,6 +23,7 @@ import com.solacesystems.jms.SolJmsUtility;
 import io.ballerina.lib.solace.jms.BallerinaSolaceDatabindingException;
 import io.ballerina.lib.solace.jms.CommonUtils;
 import io.ballerina.lib.solace.jms.config.ConnectionConfiguration;
+import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
@@ -47,6 +48,7 @@ public final class Actions {
     private static final String NATIVE_CONSUMER = "native.consumer";
     private static final String NATIVE_SESSION = "native.session";
     private static final String NATIVE_CONNECTION = "native.connection";
+    private static final String NATIVE_DESTINATION = "native.destination";
 
     private Actions() {
     }
@@ -83,11 +85,12 @@ public final class Actions {
             Session session = connection.createSession(transacted, ackMode);
 
             // Create consumer based on subscription config
-            MessageConsumer jmsConsumer = ConsumerUtils.createConsumer(session, subscriptionConfig);
+            ConsumerCreationResult result = ConsumerUtils.createConsumer(session, subscriptionConfig);
 
-            consumer.addNativeData(NATIVE_CONSUMER, jmsConsumer);
+            consumer.addNativeData(NATIVE_CONSUMER, result.consumer());
             consumer.addNativeData(NATIVE_SESSION, session);
             consumer.addNativeData(NATIVE_CONNECTION, connection);
+            consumer.addNativeData(NATIVE_DESTINATION, result.destinationName());
 
             return null;
         } catch (JMSException exception) {
@@ -286,5 +289,17 @@ public final class Actions {
                     String.format("Error occurred while closing the message consumer: %s",
                             exception.getMessage()), exception);
         }
+    }
+
+    /**
+     * Returns the resolved name of the destination (queue or topic) this consumer is bound to. For a TEMPORARY
+     * queue created without a name, this is the provider-generated name.
+     *
+     * @param consumer the Ballerina consumer object
+     * @return the destination name
+     */
+    public static BString destinationName(BObject consumer) {
+        String destinationName = (String) consumer.getNativeData(NATIVE_DESTINATION);
+        return StringUtils.fromString(destinationName);
     }
 }

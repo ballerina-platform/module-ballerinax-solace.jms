@@ -37,19 +37,18 @@ import io.ballerina.runtime.api.values.BString;
  * @param noLocal         If {@code true}, messages published to the topic using the same connection
  *                        (or one with the same client ID) will not be delivered to this subscriber.
  *
- * @param consumerType    The type of message consumer. Expected values include types such as
- *                        "DEFAULT", "DURABLE", or "SHARED" depending on your implementation.
+ * @param durability      The durability of the subscription. Expected values are "DURABLE" or "TEMPORARY".
  *
  * @param subscriberName  An optional name to identify the subscription, especially for durable
- *                        or shared subscriptions.
+ *                        subscriptions.
  */
 public record TopicConfig(String ackMode, String topicName, String messageSelector, boolean noLocal,
-                          String consumerType, String subscriberName) implements ServiceConfig {
+                          String durability, String subscriberName) implements ServiceConfig {
     private static final BString ACK_MODE = StringUtils.fromString("ackMode");
     private static final BString TOPIC_NAME = StringUtils.fromString("topicName");
     private static final BString MSG_SELECTOR = StringUtils.fromString("messageSelector");
     private static final BString NO_LOCAL = StringUtils.fromString("noLocal");
-    private static final BString CONSUMER_TYPE = StringUtils.fromString("consumerType");
+    private static final BString DURABILITY = StringUtils.fromString("durability");
     private static final BString SUBSCRIBER_NAME = StringUtils.fromString("subscriberName");
 
     TopicConfig(BMap<BString, Object> configurations) {
@@ -59,7 +58,7 @@ public record TopicConfig(String ackMode, String topicName, String messageSelect
                 configurations.containsKey(MSG_SELECTOR) ?
                         configurations.getStringValue(MSG_SELECTOR).getValue() : null,
                 configurations.getBooleanValue(NO_LOCAL),
-                configurations.getStringValue(CONSUMER_TYPE).getValue(),
+                configurations.getStringValue(DURABILITY).getValue(),
                 configurations.containsKey(SUBSCRIBER_NAME) ?
                         configurations.getStringValue(SUBSCRIBER_NAME).getValue() : null
         );

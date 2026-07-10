@@ -26,26 +26,49 @@ import io.ballerina.runtime.api.values.BString;
  * Queue subscription configuration.
  *
  * @param ackMode Session acknowledgement mode
- * @param queueName Queue name
+ * @param queueName Queue name - required unless durability is TEMPORARY. Cannot be specified when durability is
+ *                  TEMPORARY (real JMS temporary queues are always provider-named, {@code createTemporaryQueue()}
+ *                  takes no name argument)
  * @param messageSelector Message selector (optional)
+ * @param durability DURABLE or TEMPORARY
  */
 public record QueueConfig(
         AcknowledgementMode ackMode,
         String queueName,
-        String messageSelector) implements SubscriptionConfig {
+        String messageSelector,
+        Durability durability) implements SubscriptionConfig {
 
     private static final BString ACK_MODE_KEY = StringUtils.fromString("ackMode");
     private static final BString QUEUE_NAME_KEY = StringUtils.fromString("queueName");
     private static final BString MESSAGE_SELECTOR_KEY = StringUtils.fromString("messageSelector");
+    private static final BString DURABILITY_KEY = StringUtils.fromString("durability");
 
     public QueueConfig(BMap<BString, Object> config) {
         this(
                 AcknowledgementMode.valueOf(
                         config.getStringValue(ACK_MODE_KEY).getValue()),
-                config.getStringValue(QUEUE_NAME_KEY).getValue(),
+                config.containsKey(QUEUE_NAME_KEY)
+                        ? config.getStringValue(QUEUE_NAME_KEY).getValue()
+                        : null,
                 config.containsKey(MESSAGE_SELECTOR_KEY)
                         ? config.getStringValue(MESSAGE_SELECTOR_KEY).getValue()
-                        : null
+                        : null,
+                Durability.valueOf(config.getStringValue(DURABILITY_KEY).getValue())
         );
+        validate();
+    }
+
+    public boolean isTemporary() {
+        return durability == Durability.TEMPORARY;
+    }
+
+    private void validate() {
+        boolean hasQueueName = queueName != null && !queueName.isEmpty();
+        if (!isTemporary() && !hasQueueName) {
+            throw new IllegalArgumentException("queueName is required when durability is not TEMPORARY");
+        }
+        if (isTemporary() && hasQueueName) {
+            throw new IllegalArgumentException("queueName cannot be specified when durability is TEMPORARY");
+        }
     }
 }

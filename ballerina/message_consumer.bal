@@ -115,4 +115,14 @@ public isolated client class MessageConsumer {
     isolated remote function close() returns Error? = @java:Method {
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
+
+    # Get the resolved name of the destination (queue or topic) this consumer is bound to.
+    #
+    # For a `durability: TEMPORARY` queue created without a `queueName`, this returns the provider-generated
+    # name - useful for publishing it as a `replyTo` address before any message has been received.
+    #
+    # + return - The destination name
+    isolated remote function destinationName() returns string = @java:Method {
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
+    } external;
 }

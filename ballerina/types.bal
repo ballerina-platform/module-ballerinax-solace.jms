@@ -40,12 +40,12 @@ public enum AcknowledgementMode {
     DUPS_OK_ACKNOWLEDGE = "DUPS_OK_ACKNOWLEDGE"
 }
 
-# Defines the supported JMS message consumer types.
-public enum ConsumerType {
+# Durability of a queue or topic subscription: DURABLE (persisted/named) or TEMPORARY (ephemeral)
+public enum Durability {
     # Represents JMS durable subscriber
     DURABLE,
-    # Represents JMS default consumer
-    DEFAULT
+    # Represents JMS default (non-durable) consumer
+    TEMPORARY
 }
 
 # Common configurations related to the Solace queue or topic subscription.
@@ -62,16 +62,19 @@ public type CommonConsumerConfiguration record {|
 
 # Represents configurations for a Solace queue subscription.
 #
-# + queueName - The name of the queue to consume messages from
+# + queueName - The name of the queue to consume messages from - REQUIRED unless durability is TEMPORARY. Cannot be
+# specified when durability is TEMPORARY (JMS temporary queues are always provider-named)
+# + durability - DURABLE (pre-provisioned, named queue) or TEMPORARY (auto-deleted when session disconnects)
 public type QueueConfiguration record {|
     *CommonConsumerConfiguration;
-    string queueName;
+    string queueName?;
+    Durability durability = DURABLE;
 |};
 
 # Represents configurations for Solace topic subscription.
 #
 # + topicName - The name of the topic to subscribe to
-# + consumerType - The message consumer type
+# + durability - The message consumer durability
 # + subscriberName - the name used to identify the subscription
 # If this value is not set that indicates that there is no message selector for the message consumer
 # For example, to only receive messages with a property `priority` set to `'high'`, use:
@@ -81,7 +84,7 @@ public type QueueConfiguration record {|
 public type TopicConfiguration record {|
     *CommonConsumerConfiguration;
     string topicName;
-    ConsumerType consumerType = DEFAULT;
+    Durability durability = TEMPORARY;
     string subscriberName?;
     boolean noLocal = false;
 |};
@@ -105,7 +108,7 @@ public type QueueServiceConfiguration record {|
 # Represents configurations for a service configurations related to solace topic subscription.
 #
 # + topicName - The name of the topic to subscribe to
-# + consumerType - The message consumer type
+# + durability - The message consumer durability
 # + subscriberName - the name used to identify the subscription
 # If this value is not set that indicates that there is no message selector for the message consumer
 # For example, to only receive messages with a property `priority` set to `'high'`, use:
@@ -115,7 +118,7 @@ public type QueueServiceConfiguration record {|
 public type TopicServiceConfiguration record {|
     *CommonServiceConfiguration;
     string topicName;
-    ConsumerType consumerType = DEFAULT;
+    Durability durability = TEMPORARY;
     string subscriberName?;
     boolean noLocal = false;
 |};
@@ -399,7 +402,7 @@ public type Message record {|
     # JMS destination of this message (Only set by the JMS provider)
     Destination destination?;
     # Delivery mode for the message (`1` = non-persistent, `2` = persistent)
-    int deliveryMode?;
+    int deliveryMode?; // TODO: use an enum
     # Indication of whether this message is being redelivered (Only set by the JMS provider)
     boolean redelivered?;
     # Message type identifier supplied by the client when the message was sent

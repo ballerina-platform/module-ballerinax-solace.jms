@@ -26,7 +26,7 @@ import io.ballerina.lib.solace.jms.config.auth.KerberosConfiguration;
 import io.ballerina.lib.solace.jms.config.auth.OAuth2Configuration;
 import io.ballerina.lib.solace.jms.config.retry.RetryConfig;
 import io.ballerina.lib.solace.jms.config.ssl.SecureSocketConfig;
-import io.ballerina.lib.solace.jms.consumer.ConsumerType;
+import io.ballerina.lib.solace.jms.consumer.Durability;
 import io.ballerina.runtime.api.creators.ErrorCreator;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BError;
@@ -236,8 +236,36 @@ public final class CommonUtils {
      */
     public static MessageConsumer createQueueConsumer(Session session, String queueName, String messageSelector)
             throws JMSException {
-        Queue queue = session.createQueue(queueName);
+        return createConsumerForQueue(session, session.createQueue(queueName), messageSelector);
+    }
 
+    /**
+     * Creates a {@link Queue} - either a durable, named queue, or a temporary (provider-named) one. Real JMS
+     * temporary queues never take a caller-supplied name ({@link Session#createTemporaryQueue()} takes no
+     * arguments) - a TEMPORARY durability with a queueName is rejected earlier, at Ballerina config validation
+     * time.
+     *
+     * @param session     JMS session
+     * @param queueName   Queue name (only used when durability is DURABLE)
+     * @param durability  DURABLE or TEMPORARY
+     * @return the created Queue
+     * @throws JMSException if queue creation fails
+     */
+    public static Queue createQueue(Session session, String queueName, Durability durability) throws JMSException {
+        return durability == Durability.TEMPORARY ? session.createTemporaryQueue() : session.createQueue(queueName);
+    }
+
+    /**
+     * Creates a JMS MessageConsumer for an already-created queue.
+     *
+     * @param session         JMS session
+     * @param queue           the queue to consume from
+     * @param messageSelector Optional message selector
+     * @return JMS MessageConsumer
+     * @throws JMSException if consumer creation fails
+     */
+    public static MessageConsumer createConsumerForQueue(Session session, Queue queue, String messageSelector)
+            throws JMSException {
         if (messageSelector != null && !messageSelector.isEmpty()) {
             return session.createConsumer(queue, messageSelector);
         } else {
@@ -252,18 +280,18 @@ public final class CommonUtils {
      * @param topicName       Topic name
      * @param messageSelector Optional message selector
      * @param noLocal         No local flag
-     * @param consumerType    Consumer type (DEFAULT or DURABLE)
+     * @param durability      Durability (TEMPORARY or DURABLE)
      * @param subscriberName  Subscriber name (required for DURABLE)
      * @return JMS MessageConsumer
      * @throws JMSException if consumer creation fails
      */
     public static MessageConsumer createTopicConsumer(Session session, String topicName, String messageSelector,
-                                                      boolean noLocal, ConsumerType consumerType,
+                                                      boolean noLocal, Durability durability,
                                                       String subscriberName) throws JMSException {
         Topic topic = session.createTopic(topicName);
 
-        return switch (consumerType) {
-            case DEFAULT -> {
+        return switch (durability) {
+            case TEMPORARY -> {
                 if (messageSelector != null && !messageSelector.isEmpty()) {
                     yield session.createConsumer(topic, messageSelector, noLocal);
                 } else {

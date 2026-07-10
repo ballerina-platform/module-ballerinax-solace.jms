@@ -50,6 +50,45 @@ isolated function testConsumerInitWithTopic() returns error? {
 }
 
 @test:Config {groups: ["consumer"]}
+isolated function testConsumerInitWithTemporaryQueueNoName() returns error? {
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            durability: TEMPORARY
+        }
+    });
+
+    string destinationName = consumer->destinationName();
+    test:assertTrue(destinationName.length() > 0, "A TEMPORARY queue should resolve to a provider-generated name");
+
+    check consumer->close();
+}
+
+@test:Config {groups: ["consumer"]}
+isolated function testConsumerDestinationNameForTopic() returns error? {
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            topicName: TEST_TOPIC
+        }
+    });
+
+    string destinationName = consumer->destinationName();
+    test:assertEquals(destinationName, TEST_TOPIC, "destinationName() should return the topic name");
+
+    check consumer->close();
+}
+
+@test:Config {groups: ["consumer"]}
 isolated function testReceiveWithQueue() returns error? {
     MessageProducer producer = check new (BROKER_URL, {
         messageVpn: MESSAGE_VPN,
@@ -552,6 +591,47 @@ isolated function testConsumerWithFlowControlSettings() returns error? {
     Message? receivedMessage = check consumer->receive(5.0);
     test:assertTrue(receivedMessage is Message, "Should receive a message with flow control settings applied");
     check consumer->close();
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationDurableQueueMissingName() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            durability: DURABLE
+        }
+    });
+    test:assertTrue(consumer is Error, "A DURABLE queue with no queueName should fail validation");
+    if consumer is Error {
+        test:assertEquals(consumer.message(),
+                "Unexpected error occurred during consumer initialization: " +
+                "queueName is required when durability is not TEMPORARY");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationTemporaryQueueWithName() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_INIT_QUEUE,
+            durability: TEMPORARY
+        }
+    });
+    test:assertTrue(consumer is Error, "A TEMPORARY queue with a queueName should fail validation");
+    if consumer is Error {
+        test:assertEquals(consumer.message(),
+                "Unexpected error occurred during consumer initialization: " +
+                "queueName cannot be specified when durability is TEMPORARY");
+    }
 }
 
 @test:Config {groups: ["consumer", "validation"]}

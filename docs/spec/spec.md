@@ -275,13 +275,13 @@ public enum AcknowledgementMode {
 }
 ```
 
-- `ConsumerType` enum defines the supported JMS message consumer types. 
+- `Durability` enum defines the durability of a queue or topic subscription. 
 ```ballerina
-public enum ConsumerType {
+public enum Durability {
     # Represents JMS durable subscriber
     DURABLE,
-    # Represents JMS default consumer
-    DEFAULT
+    # Represents JMS default (non-durable) consumer
+    TEMPORARY
 }
 ```
 
@@ -457,8 +457,11 @@ public type SubscriptionConfiguration QueueConfiguration|TopicConfiguration;
 ```ballerina
 public type QueueConfiguration record {|
     *CommonConsumerConfiguration;
-    # The name of the queue to consume messages from
-    string queueName;
+    # The name of the queue to consume messages from - required unless durability is TEMPORARY. Cannot be
+    # specified when durability is TEMPORARY (JMS temporary queues are always provider-named)
+    string queueName?;
+    # DURABLE (pre-provisioned, named queue) or TEMPORARY (auto-deleted when session disconnects)
+    Durability durability = DURABLE;
 |};
 ```
 
@@ -468,8 +471,8 @@ public type TopicConfiguration record {|
     *CommonConsumerConfiguration;
     # The name of the topic to subscribe to
     string topicName;
-    # The message consumer type
-    ConsumerType consumerType = DEFAULT;
+    # The message consumer durability
+    Durability durability = TEMPORARY;
     # The name used to identify the subscription
     string subscriberName?;
     # If true then any messages published to the topic using this session's connection, or any other connection
@@ -703,8 +706,8 @@ public type TopicServiceConfiguration record {|
     *CommonServiceConfiguration;
     # The name of the topic to subscribe to
     string topicName;
-    # The message consumer type
-    ConsumerType consumerType = DEFAULT;
+    # The message consumer durability
+    Durability durability = TEMPORARY;
     # The name used to identify the subscription
     string subscriberName?;
     # If true then any messages published to the topic using this session's connection, or any other connection
