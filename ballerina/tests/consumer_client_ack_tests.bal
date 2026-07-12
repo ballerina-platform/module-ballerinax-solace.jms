@@ -172,6 +172,9 @@ isolated function testClientAckWithoutAck() returns error? {
     test:assertTrue(receivedMessage2 is Message, "Should receive redelivered message");
     if receivedMessage2 is Message {
         test:assertEquals(receivedMessage2.payload, "Unacknowledged message");
+        test:assertEquals(receivedMessage2.redelivered, true, "Message should be marked as redelivered");
+        test:assertTrue(receivedMessage2.deliveryCount is int && <int>receivedMessage2.deliveryCount > 1,
+                "deliveryCount should reflect more than one delivery attempt");
         check consumer2->ack(receivedMessage2);
     }
     check consumer2->close();

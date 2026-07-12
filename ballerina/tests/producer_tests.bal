@@ -166,7 +166,7 @@ isolated function testSendMessageWithCorrelationId() returns error? {
 @test:Config {
     groups: ["producer"]
 }
-isolated function testSendMessageWithJmsType() returns error? {
+isolated function testSendMessageWithMessageType() returns error? {
     MessageProducer producer = check new (BROKER_URL, {
         destination: {queueName: TEST_QUEUE},
         messageVpn: MESSAGE_VPN,
@@ -178,7 +178,28 @@ isolated function testSendMessageWithJmsType() returns error? {
 
     Message message = {
         payload: TEXT_MESSAGE_CONTENT,
-        jmsType: "OrderMessage"
+        messageType: "OrderMessage"
+    };
+    check producer->send(message);
+    check producer->close();
+}
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithSenderId() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: TEST_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT,
+        senderId: "test-sender-123"
     };
     check producer->send(message);
     check producer->close();

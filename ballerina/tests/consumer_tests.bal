@@ -445,6 +445,45 @@ isolated function testReceiveMessageWithCorrelationId() returns error? {
 }
 
 @test:Config {groups: ["consumer"], dependsOn: [testReceiveMessageWithCorrelationId]}
+isolated function testReceiveMessageWithSenderId() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        destination: {queueName: CONSUMER_SENDER_ID_QUEUE}
+    });
+
+    Message message = {
+        payload: "Message with sender ID",
+        senderId: "test-sender-789"
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_SENDER_ID_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with sender ID");
+    if receivedMessage is Message {
+        test:assertEquals(receivedMessage.senderId, "test-sender-789");
+    }
+    check consumer->close();
+}
+
+@test:Config {groups: ["consumer"], dependsOn: [testReceiveMessageWithSenderId]}
 isolated function testReceiveTimeout() returns error? {
     MessageConsumer consumer = check new (BROKER_URL, {
         messageVpn: MESSAGE_VPN,

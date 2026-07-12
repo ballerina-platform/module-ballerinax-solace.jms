@@ -18,6 +18,7 @@
 
 package io.ballerina.lib.solace.jms.producer;
 
+import com.solacesystems.jms.message.SolMessage;
 import io.ballerina.lib.solace.jms.DeliveryMode;
 import io.ballerina.lib.solace.jms.config.ConfigUtils;
 import io.ballerina.runtime.api.utils.StringUtils;
@@ -41,8 +42,9 @@ public final class MessageConverter {
     private static final BString PAYLOAD = StringUtils.fromString("payload");
     private static final BString PROPERTIES = StringUtils.fromString("properties");
     private static final BString CORRELATION_ID = StringUtils.fromString("correlationId");
-    private static final BString JMS_TYPE = StringUtils.fromString("jmsType");
+    private static final BString MESSAGE_TYPE = StringUtils.fromString("messageType");
     private static final BString REPLY_TO = StringUtils.fromString("replyTo");
+    private static final BString SENDER_ID = StringUtils.fromString("senderId");
     private static final BString DELIVERY_MODE = StringUtils.fromString("deliveryMode");
     private static final BString PRIORITY = StringUtils.fromString("priority");
     private static final BString TIME_TO_LIVE = StringUtils.fromString("timeToLive");
@@ -69,11 +71,11 @@ public final class MessageConverter {
             }
         }
 
-        // Set JMS type if present
-        if (bMessage.containsKey(JMS_TYPE)) {
-            Object jmsType = bMessage.get(JMS_TYPE);
-            if (jmsType instanceof BString bJmsType) {
-                jmsMessage.setJMSType(bJmsType.getValue());
+        // Set message type if present
+        if (bMessage.containsKey(MESSAGE_TYPE)) {
+            Object messageType = bMessage.get(MESSAGE_TYPE);
+            if (messageType instanceof BString bMessageType) {
+                jmsMessage.setJMSType(bMessageType.getValue());
             }
         }
 
@@ -92,6 +94,14 @@ public final class MessageConverter {
                 Destination replyToDestination =
                         ProducerConfiguration.getDestination((BMap<BString, Object>) replyToMap);
                 jmsMessage.setJMSReplyTo(Actions.createDestination(session, replyToDestination));
+            }
+        }
+
+        // Set sender ID if present (Solace-specific extension, only available via SolMessage)
+        if (bMessage.containsKey(SENDER_ID) && jmsMessage instanceof SolMessage solMessage) {
+            Object senderId = bMessage.get(SENDER_ID);
+            if (senderId instanceof BString bSenderId) {
+                solMessage.setSenderID(bSenderId.getValue());
             }
         }
 

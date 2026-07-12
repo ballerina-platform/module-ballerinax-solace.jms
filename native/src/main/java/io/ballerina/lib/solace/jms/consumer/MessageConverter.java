@@ -19,6 +19,7 @@
 package io.ballerina.lib.solace.jms.consumer;
 
 import com.solacesystems.jms.SupportedProperty;
+import com.solacesystems.jms.message.SolMessage;
 import io.ballerina.lib.solace.jms.BallerinaSolaceDatabindingException;
 import io.ballerina.lib.solace.jms.BallerinaSolaceException;
 import io.ballerina.lib.solace.jms.DeliveryMode;
@@ -71,11 +72,13 @@ public final class MessageConverter {
     private static final BString DESTINATION = StringUtils.fromString("destination");
     private static final BString DELIVERY_MODE = StringUtils.fromString("deliveryMode");
     private static final BString REDELIVERED = StringUtils.fromString("redelivered");
-    private static final BString JMS_TYPE = StringUtils.fromString("jmsType");
+    private static final BString MESSAGE_TYPE = StringUtils.fromString("messageType");
     private static final BString EXPIRATION = StringUtils.fromString("expiration");
     private static final BString PRIORITY = StringUtils.fromString("priority");
     private static final BString PROPERTIES = StringUtils.fromString("properties");
     private static final BString PAYLOAD = StringUtils.fromString("payload");
+    private static final BString SENDER_ID = StringUtils.fromString("senderId");
+    private static final BString DELIVERY_COUNT = StringUtils.fromString("deliveryCount");
 
     private static final BString QUEUE_NAME = StringUtils.fromString("queueName");
     private static final BString TOPIC_NAME = StringUtils.fromString("topicName");
@@ -136,9 +139,9 @@ public final class MessageConverter {
         boolean redelivered = jmsMessage.getJMSRedelivered();
         ballerinaMessage.put(REDELIVERED, redelivered);
 
-        String jmsType = jmsMessage.getJMSType();
-        if (jmsType != null) {
-            ballerinaMessage.put(JMS_TYPE, StringUtils.fromString(jmsType));
+        String jmsMessageType = jmsMessage.getJMSType();
+        if (jmsMessageType != null) {
+            ballerinaMessage.put(MESSAGE_TYPE, StringUtils.fromString(jmsMessageType));
         }
 
         long expiration = jmsMessage.getJMSExpiration();
@@ -148,6 +151,19 @@ public final class MessageConverter {
 
         int priority = jmsMessage.getJMSPriority();
         ballerinaMessage.put(PRIORITY, (long) priority);
+
+        // Set Solace-specific extension fields, only available via SolMessage
+        if (jmsMessage instanceof SolMessage solMessage) {
+            String senderId = solMessage.getSenderID();
+            if (senderId != null) {
+                ballerinaMessage.put(SENDER_ID, StringUtils.fromString(senderId));
+            }
+
+            Integer deliveryCount = solMessage.getJMSXDeliveryCount();
+            if (deliveryCount != null) {
+                ballerinaMessage.put(DELIVERY_COUNT, deliveryCount.longValue());
+            }
+        }
 
         // Set custom properties
         BMap<BString, Object> properties = extractProperties(jmsMessage);

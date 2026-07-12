@@ -35,6 +35,7 @@ const string CONSUMER_BYTES_MSG_QUEUE = "consumer-bytes-msg-queue";
 const string CONSUMER_MAP_MSG_QUEUE = "consumer-map-msg-queue";
 const string CONSUMER_PROPERTIES_QUEUE = "consumer-properties-queue";
 const string CONSUMER_CORRELATION_ID_QUEUE = "consumer-correlation-id-queue";
+const string CONSUMER_SENDER_ID_QUEUE = "consumer-sender-id-queue";
 const string CONSUMER_TIMEOUT_QUEUE = "consumer-timeout-queue";
 const string CONSUMER_SELECTOR_QUEUE = "consumer-selector-queue";
 const string CONSUMER_XML_MSG_QUEUE = "consumer-xml-msg-queue";

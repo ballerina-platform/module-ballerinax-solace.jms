@@ -291,10 +291,21 @@ An Solace message is a fundamental unit of data that facilitates communication b
 public type Message record {|
     # Message payload
     anydata payload;
+    # Delivery mode for the message (`NON_PERSISTENT` or `PERSISTENT`)
+    DeliveryMode deliveryMode = PERSISTENT;
+    # Priority level for the message (0-9, where 9 is the highest)
+    int priority?;
+    # Time in seconds before this message expires and is discarded (or moved to a Dead Message
+    # Queue, if eligible) by the broker. `0` or unset means the message never expires (default)
+    decimal timeToLive?;
+    # Message type identifier supplied by the client when the message was sent
+    string messageType?;
     # Id which can be used to correlate multiple messages
     string correlationId?;
     # JMS destination to which a reply to this message should be sent
     Destination replyTo?;
+    # Sender ID, a Solace-specific extension with no standard JMS equivalent
+    string senderId?;
     # Additional message properties
     map<Property> properties?;
     # Unique identifier for a JMS message (Only set by the JMS provider)
@@ -303,16 +314,12 @@ public type Message record {|
     int timestamp?;
     # JMS destination of this message (Only set by the JMS provider)
     Destination destination?;
-    # Delivery mode of this message (Only set by the JMS provider)
-    int deliveryMode?;
     # Indication of whether this message is being redelivered (Only set by the JMS provider)
     boolean redelivered?;
-    # Message type identifier supplied by the client when the message was sent
-    string jmsType?;
+    # Number of times this message has been delivered (Only set by the JMS provider)
+    int deliveryCount?;
     # Message expiration time (Only set by the JMS provider)
     int expiration?;
-    # Message priority level (Only set by the JMS provider)
-    int priority?;
 |};
 ```
 
