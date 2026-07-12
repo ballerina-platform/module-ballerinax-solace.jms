@@ -18,6 +18,7 @@
 
 package io.ballerina.lib.solace.jms.producer;
 
+import io.ballerina.lib.solace.jms.DeliveryMode;
 import io.ballerina.lib.solace.jms.config.ConfigUtils;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BArray;
@@ -105,8 +106,8 @@ public final class MessageConverter {
      * @return the delivery mode set on the message, or {@code defaultDeliveryMode} if absent
      */
     static int resolveDeliveryMode(BMap<BString, Object> bMessage, int defaultDeliveryMode) {
-        if (bMessage.containsKey(DELIVERY_MODE) && bMessage.get(DELIVERY_MODE) instanceof Long deliveryMode) {
-            return deliveryMode.intValue();
+        if (bMessage.containsKey(DELIVERY_MODE) && bMessage.get(DELIVERY_MODE) instanceof BString deliveryMode) {
+            return DeliveryMode.fromString(deliveryMode.getValue());
         }
         return defaultDeliveryMode;
     }

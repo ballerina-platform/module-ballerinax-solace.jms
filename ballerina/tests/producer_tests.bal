@@ -427,6 +427,27 @@ isolated function testProducerValidationWithLongUsername() {
 }
 
 @test:Config {
+    groups: ["producer", "validation"]
+}
+isolated function testProducerValidationTransactedRequiresGuaranteedDelivery() {
+    MessageProducer|Error producer = new (BROKER_URL, {
+        destination: {queueName: TEST_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        transacted: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+    test:assertTrue(producer is Error,
+            "Expected validation error when transacted is true with directTransport left at default true");
+    if producer is Error {
+        test:assertTrue(producer.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
+}
+
+@test:Config {
     groups: ["producer", "xml"]
 }
 isolated function testSendXmlMessage() returns error? {
@@ -464,7 +485,7 @@ isolated function testSendMessageWithDeliveryModeAndPriority() returns error? {
 
     Message message = {
         payload: TEXT_MESSAGE_CONTENT,
-        deliveryMode: 1,
+        deliveryMode: NON_PERSISTENT,
         priority: 7
     };
     check producer->send(message);
@@ -485,7 +506,7 @@ isolated function testSendMessageWithDeliveryModeAndPriority() returns error? {
     Message? receivedMessage = check consumer->receive(5.0);
     test:assertTrue(receivedMessage is Message, "Should receive message with delivery mode and priority set");
     if receivedMessage is Message {
-        test:assertEquals(receivedMessage.deliveryMode, 1, "Delivery mode should be overridden to non-persistent");
+        test:assertEquals(receivedMessage.deliveryMode, NON_PERSISTENT, "Delivery mode should be overridden to non-persistent");
         test:assertEquals(receivedMessage.priority, 7, "Priority should be overridden to 7");
     }
     check consumer->close();
@@ -619,7 +640,7 @@ isolated function testSendMessageWithDefaultDeliveryModeAndPriority() returns er
     if receivedMessage is Message {
         // Falls back to the producer's own defaults (see MessageConverter.resolveDeliveryMode/resolvePriority)
         // rather than any value hardcoded in this test.
-        test:assertTrue(receivedMessage?.deliveryMode is int, "Delivery mode should be populated by the provider");
+        test:assertTrue(receivedMessage?.deliveryMode is DeliveryMode, "Delivery mode should be populated by the provider");
         test:assertTrue(receivedMessage?.priority is int, "Priority should be populated by the provider");
     }
     check consumer->close();

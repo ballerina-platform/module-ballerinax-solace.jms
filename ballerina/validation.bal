@@ -47,7 +47,11 @@ isolated function validateConfigurations(CommonConnectionConfiguration config) r
         }
     }
 
-    // Validate flow-control configurations
+}
+
+isolated function validateConsumerConnectionConfigurations(CommonConsumerConnectionConfiguration config) returns Error? {
+    check validateConfigurations(config);
+
     int? transportWindowSize = config.transportWindowSize;
     if transportWindowSize is int && (transportWindowSize < 1 || transportWindowSize > 255) {
         return error Error("transportWindowSize must be between 1 and 255");
@@ -63,6 +67,33 @@ isolated function validateConfigurations(CommonConnectionConfiguration config) r
     if config.directTransport && (transportWindowSize is int || ackThreshold is int || ackTimer is decimal) {
         return error Error(
                 "transportWindowSize, ackThreshold, and ackTimer only apply when directTransport is false");
+    }
+}
+
+isolated function validateProducerConfigurations(ProducerConfiguration config) returns Error? {
+    check validateConfigurations(config);
+
+    if config.transacted && config.directTransport {
+        return error Error(
+                "directTransport must be false when transacted is true: " +
+                "Solace does not support transacted sessions over direct transport");
+    }
+}
+
+isolated function validateConsumerConfigurations(ConsumerConfiguration config) returns Error? {
+    check validateConsumerConnectionConfigurations(config);
+
+    if config.subscriptionConfig.ackMode == SESSION_TRANSACTED && config.directTransport {
+        return error Error(
+                "directTransport must be false when ackMode is SESSION_TRANSACTED: " +
+                "Solace does not support transacted sessions over direct transport");
+    }
+}
+
+isolated function validateMessage(Message message) returns Error? {
+    int? priority = message.priority;
+    if priority is int && (priority < 0 || priority > 9) {
+        return error Error("priority must be between 0 and 9");
     }
 }
 

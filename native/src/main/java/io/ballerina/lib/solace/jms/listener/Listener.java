@@ -48,6 +48,7 @@ public class Listener {
     private static final String NATIVE_SERVICE_LIST = "native.service.list";
     private static final String NATIVE_SERVICE = "native.service";
     private static final String NATIVE_RECEIVER = "native.receiver";
+    private static final String NATIVE_DIRECT_TRANSPORT = "native.directTransport";
     private static final String LISTENER_STARTED = "listener.started";
     private static final String AUTO_ACKNOWLEDGE_MODE = "AUTO_ACKNOWLEDGE";
     private static final String CLIENT_ACKNOWLEDGE_MODE = "CLIENT_ACKNOWLEDGE";
@@ -67,6 +68,7 @@ public class Listener {
             Connection connection = connectionFactory.createConnection();
             bListener.addNativeData(NATIVE_CONNECTION, connection);
             bListener.addNativeData(NATIVE_SERVICE_LIST, new ArrayList<BObject>());
+            bListener.addNativeData(NATIVE_DIRECT_TRANSPORT, connConfig.directTransport());
         } catch (Exception e) {
             return CommonUtils.createError(String.format("Failed to initialize listener: %s", e.getMessage()), e);
         }
@@ -82,6 +84,13 @@ public class Listener {
             ServiceConfig svcConfig = nativeService.getServiceConfig();
             int jmsAckMode = getJmsAckMode(svcConfig.ackMode());
             boolean transacted = Session.SESSION_TRANSACTED == jmsAckMode;
+            boolean directTransport = (Boolean) bListener.getNativeData(NATIVE_DIRECT_TRANSPORT);
+            if (transacted && directTransport) {
+                return CommonUtils.createError(
+                        "Failed to attach service to listener: directTransport must be false when ackMode is "
+                                + "SESSION_TRANSACTED: Solace does not support transacted sessions over direct "
+                                + "transport");
+            }
             Session session = connection.createSession(transacted, jmsAckMode);
             MessageConsumer consumer = ListenerUtils.createConsumer(session, svcConfig);
             MessageDispatcher messageDispatcher = new MessageDispatcher(env.getRuntime(), nativeService, session);

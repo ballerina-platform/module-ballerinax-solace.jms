@@ -339,11 +339,9 @@ public final class CommonUtils {
         }
         return Arrays.stream(protocols).map(protocol -> {
             return switch (protocol) {
-                case "sslv3" -> "SSLv3";
-                case "tlsv1" -> "TLSv1";
-                case "tlsv11" -> "TLSv1.1";
-                case "tlsv12" -> "TLSv1.2";
-                case "SSLv2Hello" -> "SSLv2Hello";
+                case "TLSV1_1" -> "tlsv1.1";
+                case "TLSV1_2" -> "tlsv1.2";
+                case "TLSV1_3" -> "tlsv1.3";
                 default -> throw new IllegalArgumentException("Unsupported protocol: " + protocol);
             };
         }).toArray(String[]::new);

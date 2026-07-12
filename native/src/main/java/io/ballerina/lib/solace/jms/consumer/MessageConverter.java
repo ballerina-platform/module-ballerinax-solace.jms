@@ -21,6 +21,7 @@ package io.ballerina.lib.solace.jms.consumer;
 import com.solacesystems.jms.SupportedProperty;
 import io.ballerina.lib.solace.jms.BallerinaSolaceDatabindingException;
 import io.ballerina.lib.solace.jms.BallerinaSolaceException;
+import io.ballerina.lib.solace.jms.DeliveryMode;
 import io.ballerina.lib.solace.jms.ModuleUtils;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
@@ -130,7 +131,7 @@ public final class MessageConverter {
         }
 
         int deliveryMode = jmsMessage.getJMSDeliveryMode();
-        ballerinaMessage.put(DELIVERY_MODE, (long) deliveryMode);
+        ballerinaMessage.put(DELIVERY_MODE, StringUtils.fromString(DeliveryMode.fromJmsMode(deliveryMode)));
 
         boolean redelivered = jmsMessage.getJMSRedelivered();
         ballerinaMessage.put(REDELIVERED, redelivered);

@@ -717,3 +717,24 @@ isolated function testConsumerValidationFlowControlRequiresGuaranteedDelivery() 
                 "Error message should mention directTransport");
     }
 }
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationTransactedRequiresGuaranteedDelivery() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE,
+            ackMode: SESSION_TRANSACTED
+        }
+    });
+    test:assertTrue(consumer is Error,
+            "Expected validation error when ackMode is SESSION_TRANSACTED with directTransport left at default true");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
+}

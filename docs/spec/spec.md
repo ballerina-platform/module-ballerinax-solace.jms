@@ -65,9 +65,6 @@ type CommonConnectionConfiguration record {
     AuthConfiguration auth?;
     # The SSL/TLS configuration for secure connections
     SecureSocket secureSocket?;
-    # Enables transacted messaging when set to `true`. In transacted mode, messages are sent and received
-    # within a transaction context, requiring explicit commit or rollback
-    boolean transacted = false;
     # A unique client name to use to register to the appliance. If not specified, a unique client ID is auto-generated
     string clientName?;
     # A description for the application client
@@ -352,6 +349,9 @@ The `jms:MessageProducer` is used to send messages to a Solace destination.
 ```ballerina
 public type ProducerConfiguration record {|
     *jms:CommonConnectionConfiguration;
+    # Enables transacted messaging when set to `true`. In transacted mode, messages are sent
+    # within a transaction context, requiring explicit commit or rollback
+    boolean transacted = false;
     # The default destination (Topic or Queue) where messages will be published. Optional - can be
     # omitted and/or overridden per call via the `destination` parameter of `send()`
     Destination destination?;

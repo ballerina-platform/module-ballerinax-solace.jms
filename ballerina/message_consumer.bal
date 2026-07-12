@@ -33,7 +33,7 @@ public isolated client class MessageConsumer {
     # + config - Consumer configuration including connection settings and subscription details
     # + return - A `jms:Error` if initialization fails or else `()`
     public isolated function init(string url, *ConsumerConfiguration config) returns Error? {
-        Error? validated = validateConfigurations(config);
+        Error? validated = validateConsumerConfigurations(config);
         if validated is Error {
             return error Error(
                 string `Error occurred while validating the consumer configurations: ${validated.message()}`, validated);

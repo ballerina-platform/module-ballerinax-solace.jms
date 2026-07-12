@@ -260,3 +260,31 @@ isolated function testDetachFailure() returns error? {
                 "Invalid error message");
     }
 }
+
+@test:Config {
+    groups: ["service", "validations"]
+}
+isolated function testListenerAttachTransactedRequiresGuaranteedDelivery() returns error? {
+    Listener msgListener = check new Listener(BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+    Service consumerSvc = @ServiceConfig {
+        ackMode: SESSION_TRANSACTED,
+        queueName: "test-svc-attach"
+    } service object {
+        remote function onMessage(Message message) returns error? {
+        }
+    };
+    Error? result = msgListener.attach(consumerSvc);
+    test:assertTrue(result is Error,
+            "Expected validation error when ackMode is SESSION_TRANSACTED with directTransport left at default true");
+    if result is Error {
+        test:assertTrue(result.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
+    check msgListener.immediateStop();
+}

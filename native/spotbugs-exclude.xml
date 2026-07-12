@@ -29,4 +29,11 @@
         <Class name="io.ballerina.lib.solace.jms.consumer.MessageConverter" />
         <Bug pattern="BC_UNCONFIRMED_CAST" />
     </Match>
+    <Match>
+        <Class name="io.ballerina.lib.solace.jms.consumer.ConsumerCreationResult"/>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
 </FindBugsFilter>

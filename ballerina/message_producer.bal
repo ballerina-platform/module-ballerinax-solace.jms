@@ -36,7 +36,7 @@ public isolated client class MessageProducer {
     # + config - Producer configuration including connection settings and destination
     # + return - A `jms:Error` if initialization fails or else `()`
     public isolated function init(string url, *ProducerConfiguration config) returns Error? {
-        Error? validated = validateConfigurations(config);
+        Error? validated = validateProducerConfigurations(config);
         if validated is Error {
             return error Error(
                 string `Error occurred while validating the producer configurations: ${validated.message()}`, validated);
@@ -64,6 +64,10 @@ public isolated client class MessageProducer {
     # producer's configured default destination, if any
     # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function send(Message message, Destination? destination = ()) returns Error? {
+        Error? validated = validateMessage(message);
+        if validated is Error {
+            return validated;
+        }
         string|map<Value>|byte[] payload = convertPayload(message.payload);
         map<Property> properties = prepareProperties(message);
         InternalMessage iMessage = {
