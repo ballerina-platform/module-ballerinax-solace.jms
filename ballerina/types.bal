@@ -214,7 +214,7 @@ public type RetryConfiguration record {|
     # A value of -1 means retry forever, 0 means no retries (fail immediately on first failure)
     int connectRetries = 0;
     # The number of connection retries per host when multiple hosts are specified in the URL.
-    int connectRetriesPerHost = 0; // TODO: we don't have a comma separated host list
+    int connectRetriesPerHost = 0;
     # The number of times to retry reconnecting after an established connection is lost.
     # A value of -1 means retry forever
     int reconnectRetries = 3;
