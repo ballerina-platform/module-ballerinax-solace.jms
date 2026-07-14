@@ -842,6 +842,27 @@ isolated function testConsumerValidationFlowControlRequiresGuaranteedDelivery() 
 }
 
 @test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationAckTimerRequiresGuaranteedDelivery() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        ackTimer: 0.5,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error,
+            "Expected validation error when ackTimer is used with directTransport left at default true");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
 isolated function testConsumerValidationTransactedRequiresGuaranteedDelivery() {
     MessageConsumer|Error consumer = new (BROKER_URL, {
         messageVpn: MESSAGE_VPN,

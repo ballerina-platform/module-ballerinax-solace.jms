@@ -64,6 +64,11 @@ isolated function validateConsumerConnectionConfigurations(CommonConsumerConnect
     if ackTimer is decimal && (ackTimer < 0.02d || ackTimer > 1.5d) {
         return error Error("ackTimer must be between 0.02 and 1.5 seconds");
     }
+    if config.directTransport && (transportWindowSize is int || ackTimer is decimal) {
+        return error Error(
+                "directTransport must be false when receive flow-control settings are configured: " +
+                "Solace receive flow-control settings require guaranteed delivery");
+    }
 }
 
 isolated function validateProducerConfigurations(ProducerConfiguration config) returns Error? {
