@@ -264,6 +264,27 @@ isolated function testDetachFailure() returns error? {
 @test:Config {
     groups: ["service", "validations"]
 }
+isolated function testDurableTopicServiceMissingSubscriberName() returns error? {
+    Service consumerSvc = @ServiceConfig {
+        topicName: TEST_TOPIC,
+        durability: DURABLE
+    } service object {
+        remote function onMessage(Message message) returns error? {
+        }
+    };
+    Error? result = solaceListener.attach(consumerSvc);
+    test:assertTrue(result is Error);
+    if result is Error {
+        test:assertEquals(
+                result.message(),
+                "Failed to attach service to listener: subscriberName is required when durability is DURABLE",
+                "Invalid error message");
+    }
+}
+
+@test:Config {
+    groups: ["service", "validations"]
+}
 isolated function testListenerAttachTransactedRequiresGuaranteedDelivery() returns error? {
     Listener msgListener = check new Listener(BROKER_URL, {
         messageVpn: MESSAGE_VPN,

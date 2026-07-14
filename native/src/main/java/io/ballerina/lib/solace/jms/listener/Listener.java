@@ -105,7 +105,7 @@ public class Listener {
                     receiver.consume();
                 }
             }
-        } catch (BError | JMSException e) {
+        } catch (BError | JMSException | IllegalArgumentException e) {
             String errorMsg = Objects.isNull(e.getMessage()) ? "Unknown error" : e.getMessage();
             return CommonUtils.createError(String.format("Failed to attach service to listener: %s", errorMsg), e);
         }

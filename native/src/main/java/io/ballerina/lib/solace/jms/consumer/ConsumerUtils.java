@@ -54,7 +54,6 @@ public final class ConsumerUtils {
                         session,
                         topicConfig.topicName(),
                         topicConfig.messageSelector(),
-                        topicConfig.noLocal(),
                         topicConfig.durability(),
                         topicConfig.subscriberName()
                 );

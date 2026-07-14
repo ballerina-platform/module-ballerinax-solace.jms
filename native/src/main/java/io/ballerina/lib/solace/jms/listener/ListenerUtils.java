@@ -52,7 +52,6 @@ public final class ListenerUtils {
                     session,
                     topicConfig.topicName(),
                     topicConfig.messageSelector(),
-                    topicConfig.noLocal(),
                     Durability.valueOf(topicConfig.durability()),
                     topicConfig.subscriberName()
             );

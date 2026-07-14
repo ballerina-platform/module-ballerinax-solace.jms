@@ -653,6 +653,27 @@ isolated function testConsumerValidationDurableQueueMissingName() {
 }
 
 @test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationDurableTopicMissingSubscriberName() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            topicName: TEST_TOPIC,
+            durability: DURABLE
+        }
+    });
+    test:assertTrue(consumer is Error, "A DURABLE topic with no subscriberName should fail validation");
+    if consumer is Error {
+        test:assertEquals(consumer.message(),
+                "Error occurred while validating the consumer configurations: " +
+                "subscriberName is required when durability is DURABLE");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
 isolated function testConsumerValidationTemporaryQueueWithName() {
     MessageConsumer|Error consumer = new (BROKER_URL, {
         messageVpn: MESSAGE_VPN,
@@ -712,6 +733,69 @@ isolated function testConsumerValidationWithInvalidAckThreshold() {
     if consumer is Error {
         test:assertTrue(consumer.message().toLowerAscii().includes("ackthreshold"),
                 "Error message should mention ackThreshold");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationWithAckThresholdZero() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        directTransport: false,
+        ackThreshold: 0,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error, "Expected validation error for ackThreshold of 0");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("ackthreshold"),
+                "Error message should mention ackThreshold");
+    }
+}
+
+@test:Config {groups: ["consumer", "config"]}
+isolated function testConsumerWithAckThresholdLowerBound() returns error? {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        directTransport: false,
+        ackThreshold: 1,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertFalse(consumer is Error, "ackThreshold of 1 should pass validation");
+    if consumer is MessageConsumer {
+        check consumer->close();
+    }
+}
+
+@test:Config {groups: ["consumer", "config"]}
+isolated function testConsumerWithAckThresholdUpperBound() returns error? {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        directTransport: false,
+        ackThreshold: 75,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertFalse(consumer is Error, "ackThreshold of 75 should pass validation");
+    if consumer is MessageConsumer {
+        check consumer->close();
     }
 }
 

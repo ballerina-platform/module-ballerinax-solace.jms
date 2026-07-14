@@ -28,7 +28,6 @@ import io.ballerina.runtime.api.values.BString;
  * @param ackMode Session acknowledgement mode
  * @param topicName Topic name
  * @param messageSelector Message selector (optional)
- * @param noLocal No local flag for topic subscribers
  * @param durability DURABLE or TEMPORARY
  * @param subscriberName Subscriber name for durable subscriptions
  */
@@ -36,14 +35,12 @@ public record TopicConfig(
         AcknowledgementMode ackMode,
         String topicName,
         String messageSelector,
-        boolean noLocal,
         Durability durability,
         String subscriberName) implements SubscriptionConfig {
 
     private static final BString ACK_MODE_KEY = StringUtils.fromString("ackMode");
     private static final BString TOPIC_NAME_KEY = StringUtils.fromString("topicName");
     private static final BString MESSAGE_SELECTOR_KEY = StringUtils.fromString("messageSelector");
-    private static final BString NO_LOCAL_KEY = StringUtils.fromString("noLocal");
     private static final BString DURABILITY_KEY = StringUtils.fromString("durability");
     private static final BString SUBSCRIBER_NAME_KEY = StringUtils.fromString("subscriberName");
 
@@ -55,9 +52,6 @@ public record TopicConfig(
                 config.containsKey(MESSAGE_SELECTOR_KEY)
                         ? config.getStringValue(MESSAGE_SELECTOR_KEY).getValue()
                         : null,
-                config.containsKey(NO_LOCAL_KEY)
-                        ? config.getBooleanValue(NO_LOCAL_KEY)
-                        : false,
                 Durability.valueOf(
                         config.getStringValue(DURABILITY_KEY).getValue()),
                 config.containsKey(SUBSCRIBER_NAME_KEY)

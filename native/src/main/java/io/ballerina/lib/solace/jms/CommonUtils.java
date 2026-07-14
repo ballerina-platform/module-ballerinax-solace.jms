@@ -194,9 +194,7 @@ public final class CommonUtils {
         if (config.transportWindowSize() != null) {
             factory.setReceiveADWindowSize(config.transportWindowSize());
         }
-        if (config.ackThreshold() != null) {
-            factory.setReceiveAdAckThreshold(config.ackThreshold());
-        }
+        factory.setReceiveAdAckThreshold(config.ackThreshold());
         if (config.ackTimerMillis() != null) {
             factory.setReceiveADAckTimerInMillis(Math.toIntExact(config.ackTimerMillis()));
         }
@@ -279,31 +277,30 @@ public final class CommonUtils {
      * @param session         JMS session
      * @param topicName       Topic name
      * @param messageSelector Optional message selector
-     * @param noLocal         No local flag
      * @param durability      Durability (TEMPORARY or DURABLE)
      * @param subscriberName  Subscriber name (required for DURABLE)
      * @return JMS MessageConsumer
      * @throws JMSException if consumer creation fails
      */
     public static MessageConsumer createTopicConsumer(Session session, String topicName, String messageSelector,
-                                                      boolean noLocal, Durability durability,
+                                                      Durability durability,
                                                       String subscriberName) throws JMSException {
         Topic topic = session.createTopic(topicName);
 
         return switch (durability) {
             case TEMPORARY -> {
                 if (messageSelector != null && !messageSelector.isEmpty()) {
-                    yield session.createConsumer(topic, messageSelector, noLocal);
+                    yield session.createConsumer(topic, messageSelector);
                 } else {
                     yield session.createConsumer(topic);
                 }
             }
             case DURABLE -> {
                 if (subscriberName == null || subscriberName.isEmpty()) {
-                    throw new IllegalArgumentException("Subscriber name is required for DURABLE consumer type");
+                    throw new IllegalArgumentException("subscriberName is required when durability is DURABLE");
                 }
                 if (messageSelector != null && !messageSelector.isEmpty()) {
-                    yield session.createDurableSubscriber(topic, subscriberName, messageSelector, noLocal);
+                    yield session.createDurableSubscriber(topic, subscriberName, messageSelector, false);
                 } else {
                     yield session.createDurableSubscriber(topic, subscriberName);
                 }

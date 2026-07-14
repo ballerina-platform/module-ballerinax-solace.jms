@@ -56,17 +56,13 @@ isolated function validateConsumerConnectionConfigurations(CommonConsumerConnect
     if transportWindowSize is int && (transportWindowSize < 1 || transportWindowSize > 255) {
         return error Error("transportWindowSize must be between 1 and 255");
     }
-    int? ackThreshold = config.ackThreshold;
-    if ackThreshold is int && (ackThreshold < 1 || ackThreshold > 75) {
+    int ackThreshold = config.ackThreshold;
+    if ackThreshold < 1 || ackThreshold > 75 {
         return error Error("ackThreshold must be between 1 and 75");
     }
     decimal? ackTimer = config.ackTimer;
     if ackTimer is decimal && (ackTimer < 0.02d || ackTimer > 1.5d) {
         return error Error("ackTimer must be between 0.02 and 1.5 seconds");
-    }
-    if config.directTransport && (transportWindowSize is int || ackThreshold is int || ackTimer is decimal) {
-        return error Error(
-                "transportWindowSize, ackThreshold, and ackTimer only apply when directTransport is false");
     }
 }
 
@@ -88,6 +84,13 @@ isolated function validateConsumerConfigurations(ConsumerConfiguration config) r
                 "directTransport must be false when ackMode is SESSION_TRANSACTED: " +
                 "Solace does not support transacted sessions over direct transport");
     }
+    SubscriptionConfiguration subscriptionConfig = config.subscriptionConfig;
+    if subscriptionConfig is TopicConfiguration && subscriptionConfig.durability == DURABLE {
+        string? subscriberName = subscriptionConfig.subscriberName;
+        if subscriberName !is string || subscriberName == "" {
+            return error Error("subscriberName is required when durability is DURABLE");
+        }
+    }
 }
 
 isolated function validateMessage(Message message) returns Error? {
@@ -96,4 +99,3 @@ isolated function validateMessage(Message message) returns Error? {
         return error Error("priority must be between 0 and 9");
     }
 }
-

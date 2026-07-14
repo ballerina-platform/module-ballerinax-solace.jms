@@ -255,20 +255,20 @@ public type CommonConsumerConfiguration record {|
 public enum AcknowledgementMode {
     # Indicates that the session will use a local transaction which may subsequently 
     # be committed or rolled back by calling the session's `commit` or `rollback` methods. 
-    SESSION_TRANSACTED = "SESSION_TRANSACTED",
+    SESSION_TRANSACTED,
     # Indicates that the session automatically acknowledges a client's receipt of a message 
     # either when the session has successfully returned from a call to `receive` or when 
     # the message listener the session has called to process the message successfully returns.
-    AUTO_ACKNOWLEDGE = "AUTO_ACKNOWLEDGE",
+    AUTO_ACKNOWLEDGE,
     # Indicates that the client acknowledges a consumed message by calling the 
     # MessageConsumer's or Caller's `ack` method. Acknowledging a consumed message 
     # acknowledges all messages that the session has consumed.
-    CLIENT_ACKNOWLEDGE = "CLIENT_ACKNOWLEDGE",
+    CLIENT_ACKNOWLEDGE,
     # Indicates that the session to lazily acknowledge the delivery of messages. 
     # This is likely to result in the delivery of some duplicate messages if the JMS provider fails, 
     # so it should only be used by consumers that can tolerate duplicate messages. 
     # Use of this mode can reduce session overhead by minimizing the work the session does to prevent duplicates.
-    DUPS_OK_ACKNOWLEDGE = "DUPS_OK_ACKNOWLEDGE"
+    DUPS_OK_ACKNOWLEDGE
 }
 ```
 
@@ -482,9 +482,6 @@ public type TopicConfiguration record {|
     Durability durability = TEMPORARY;
     # The name used to identify the subscription
     string subscriberName?;
-    # If true then any messages published to the topic using this session's connection, or any other connection
-    # with the same client identifier, will not be added to the durable subscription.
-    boolean noLocal = false;
 |};
 ```
 
@@ -701,7 +698,7 @@ public type ServiceConfiguration QueueServiceConfiguration|TopicServiceConfigura
 - `QueueServiceConfiguration` record represents configurations for a service configurations related to solace queue subscription.
 ```ballerina
 public type QueueServiceConfiguration record {|
-    *CommonServiceConfiguration;
+    *CommonConsumerConfiguration;
     # The name of the queue to consume messages from
     string queueName;
 |};
@@ -710,16 +707,13 @@ public type QueueServiceConfiguration record {|
 - `TopicServiceConfiguration` record represents configurations for a service configurations related to solace topic subscription.
 ```ballerina
 public type TopicServiceConfiguration record {|
-    *CommonServiceConfiguration;
+    *CommonConsumerConfiguration;
     # The name of the topic to subscribe to
     string topicName;
     # The message consumer durability
     Durability durability = TEMPORARY;
     # The name used to identify the subscription
     string subscriberName?;
-    # If true then any messages published to the topic using this session's connection, or any other connection
-    # with the same client identifier, will not be added to the durable subscription.
-    boolean noLocal = false;
 |};
 ```
 

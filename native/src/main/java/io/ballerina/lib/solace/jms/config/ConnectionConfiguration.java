@@ -50,7 +50,7 @@ import static io.ballerina.lib.solace.jms.config.ConfigUtils.decimalToMillis;
  * @param retryConfig             retry configuration for connection attempts, or {@code null}
  * @param secureSocket            SSL/TLS configuration for secure connections, or {@code null}
  * @param transportWindowSize     max un-acked guaranteed messages in flight (1-255), or {@code null} for default
- * @param ackThreshold            ack threshold as percentage of window size (1-75), or {@code null} for default
+ * @param ackThreshold            ack threshold as percentage of window size (1-75), defaults to 60
  * @param ackTimerMillis          ack flush timer in milliseconds, or {@code null} for default
  */
 public record ConnectionConfiguration(

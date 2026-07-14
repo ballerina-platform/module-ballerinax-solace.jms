@@ -90,7 +90,6 @@ public isolated client class MessageConsumer {
     #
     # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'commit() returns Error? = @java:Method {
-        name: "commit",
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
@@ -102,7 +101,6 @@ public isolated client class MessageConsumer {
     #
     # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'rollback() returns Error? = @java:Method {
-        name: "rollback",
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
