@@ -55,20 +55,9 @@ public record QueueConfig(
                         : null,
                 Durability.valueOf(config.getStringValue(DURABILITY_KEY).getValue())
         );
-        validate();
     }
 
     public boolean isTemporary() {
         return durability == Durability.TEMPORARY;
-    }
-
-    private void validate() {
-        boolean hasQueueName = queueName != null && !queueName.isEmpty();
-        if (!isTemporary() && !hasQueueName) {
-            throw new IllegalArgumentException("queueName is required when durability is not TEMPORARY");
-        }
-        if (isTemporary() && hasQueueName) {
-            throw new IllegalArgumentException("queueName cannot be specified when durability is TEMPORARY");
-        }
     }
 }

@@ -90,7 +90,15 @@ isolated function validateConsumerConfigurations(ConsumerConfiguration config) r
                 "Solace does not support transacted sessions over direct transport");
     }
     SubscriptionConfiguration subscriptionConfig = config.subscriptionConfig;
-    if subscriptionConfig is TopicConfiguration && subscriptionConfig.durability == DURABLE {
+    if subscriptionConfig is QueueConfiguration {
+        string? queueName = subscriptionConfig.queueName;
+        if subscriptionConfig.durability != TEMPORARY && (queueName !is string || queueName == "") {
+            return error Error("queueName is required when durability is not TEMPORARY");
+        }
+        if subscriptionConfig.durability == TEMPORARY && queueName is string && queueName != "" {
+            return error Error("queueName cannot be specified when durability is TEMPORARY");
+        }
+    } else if subscriptionConfig.durability == DURABLE {
         string? subscriberName = subscriptionConfig.subscriberName;
         if subscriberName !is string || subscriberName == "" {
             return error Error("subscriberName is required when durability is DURABLE");

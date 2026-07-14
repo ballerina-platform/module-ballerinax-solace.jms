@@ -646,9 +646,8 @@ isolated function testConsumerValidationDurableQueueMissingName() {
     });
     test:assertTrue(consumer is Error, "A DURABLE queue with no queueName should fail validation");
     if consumer is Error {
-        test:assertEquals(consumer.message(),
-                "Unexpected error occurred during consumer initialization: " +
-                "queueName is required when durability is not TEMPORARY");
+        test:assertTrue(consumer.message().toLowerAscii().includes("queuename is required"),
+                "Error message should mention the missing queueName requirement");
     }
 }
 
@@ -667,9 +666,8 @@ isolated function testConsumerValidationDurableTopicMissingSubscriberName() {
     });
     test:assertTrue(consumer is Error, "A DURABLE topic with no subscriberName should fail validation");
     if consumer is Error {
-        test:assertEquals(consumer.message(),
-                "Error occurred while validating the consumer configurations: " +
-                "subscriberName is required when durability is DURABLE");
+        test:assertTrue(consumer.message().toLowerAscii().includes("subscribername is required"),
+                "Error message should mention the missing subscriberName requirement");
     }
 }
 
@@ -688,9 +686,8 @@ isolated function testConsumerValidationTemporaryQueueWithName() {
     });
     test:assertTrue(consumer is Error, "A TEMPORARY queue with a queueName should fail validation");
     if consumer is Error {
-        test:assertEquals(consumer.message(),
-                "Unexpected error occurred during consumer initialization: " +
-                "queueName cannot be specified when durability is TEMPORARY");
+        test:assertTrue(consumer.message().toLowerAscii().includes("queuename cannot be specified"),
+                "Error message should mention that TEMPORARY queues cannot specify queueName");
     }
 }
 

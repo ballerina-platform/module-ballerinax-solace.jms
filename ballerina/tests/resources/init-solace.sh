@@ -37,7 +37,7 @@ create_queue() {
     local queue_name=$1
     echo "Creating queue: $queue_name"
 
-    for attempt in 1 2 3 4 5; do
+    for _ in 1 2 3 4 5; do
         response=$(curl -s -X POST "${SEMP_URL}/msgVpns/${VPN}/queues" \
             -u "${AUTH}" \
             -H "Content-Type: application/json" \

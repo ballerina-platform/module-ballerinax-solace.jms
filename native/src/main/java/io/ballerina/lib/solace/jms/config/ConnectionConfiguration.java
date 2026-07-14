@@ -113,7 +113,7 @@ public record ConnectionConfiguration(
                         new SecureSocketConfig((BMap<BString, Object>) config.getMapValue(SECURE_SOCKET)) : null,
                 config.containsKey(TRANSPORT_WINDOW_SIZE) ?
                         config.getIntValue(TRANSPORT_WINDOW_SIZE).intValue() : null,
-                config.containsKey(ACK_THRESHOLD) ? config.getIntValue(ACK_THRESHOLD).intValue() : null,
+                config.containsKey(ACK_THRESHOLD) ? config.getIntValue(ACK_THRESHOLD).intValue() : 60,
                 config.containsKey(ACK_TIMER) ?
                         decimalToMillis(((BDecimal) config.get(ACK_TIMER)).decimalValue()) : null
         );

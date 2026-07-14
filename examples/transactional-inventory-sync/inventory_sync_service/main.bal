@@ -45,6 +45,8 @@ public function main() returns error? {
             record {|*jms:Message; StockUpdate payload;|}? redelivered = check consumer->receive(10.0);
             if redelivered is record {} {
                 log:printWarn("Discarding redelivered update after review", item = redelivered.payload.item);
+            } else {
+                log:printWarn("Expected redelivery after rollback did not arrive within timeout");
             }
             check consumer->'commit();
             processed += 1;
