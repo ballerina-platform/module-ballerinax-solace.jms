@@ -28,16 +28,16 @@ import io.ballerina.runtime.api.values.BString;
  * @param username username for authentication (max 32 characters)
  * @param password password for authentication (max 128 characters), or {@code null}
  */
-public record BasicAuthConfig(String username, String password) implements AuthConfig {
+public record BasicAuthConfiguration(String username, String password) implements AuthConfiguration {
     private static final BString USERNAME = StringUtils.fromString("username");
     private static final BString PASSWORD = StringUtils.fromString("password");
 
     /**
-     * Creates a BasicAuthConfig from Ballerina configuration map.
+     * Creates a BasicAuthConfiguration from Ballerina configuration map.
      *
      * @param config Ballerina configuration map
      */
-    public BasicAuthConfig(BMap<BString, Object> config) {
+    public BasicAuthConfiguration(BMap<BString, Object> config) {
         this(
                 config.getStringValue(USERNAME).getValue(),
                 config.containsKey(PASSWORD) ? config.getStringValue(PASSWORD).getValue() : null

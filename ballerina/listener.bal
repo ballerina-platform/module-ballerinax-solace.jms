@@ -38,7 +38,7 @@ public isolated class Listener {
     # + config - configurations used when initializing the listener
     # + return - `jms:Error` if an error occurs or `()` otherwise
     public isolated function init(string url, *ListenerConfiguration config) returns Error? {
-        Error? validated = validateConfigurations(config);
+        Error? validated = validateConsumerConnectionConfigurations(config);
         if validated is Error {
             return error Error(
                 string `Error occurred while validating the listener configurations: ${validated.message()}`, validated);

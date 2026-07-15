@@ -30,7 +30,8 @@ import io.ballerina.runtime.api.values.BString;
  *
  * @param connectionConfig connection configuration for broker connection
  * @param transacted       {@code true} to enable transacted messaging
- * @param destination      destination (Topic or Queue) for messages
+ * @param destination      default destination (Topic or Queue) for messages, or {@code null} if
+ *                         none was configured (a destination must then be supplied per {@code send()} call)
  */
 public record ProducerConfiguration(
         ConnectionConfiguration connectionConfig,
@@ -49,7 +50,8 @@ public record ProducerConfiguration(
         this(
                 new ConnectionConfiguration(config),
                 config.getBooleanValue(TRANSACTED),
-                getDestination((BMap<BString, Object>) config.getMapValue(DESTINATION))
+                config.containsKey(DESTINATION) ?
+                        getDestination((BMap<BString, Object>) config.getMapValue(DESTINATION)) : null
         );
     }
 

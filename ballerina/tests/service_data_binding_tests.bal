@@ -316,7 +316,7 @@ isolated function testServiceDataBindingWithCaller() returns error? {
 
     Service callerService = @ServiceConfig {
         queueName: "service-databinding-queue",
-        sessionAckMode: CLIENT_ACKNOWLEDGE
+        ackMode: CLIENT_ACKNOWLEDGE
     } service object {
         remote function onMessage(record {|*Message; string payload;|} message, Caller caller) returns error? {
             lock {

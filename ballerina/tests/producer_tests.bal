@@ -14,7 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/lang.runtime;
 import ballerina/test;
+import ballerina/time;
 
 @test:Config {
     groups: ["producer"]
@@ -131,7 +133,9 @@ isolated function testSendMessageWithProperties() returns error? {
         properties: {
             "priority": 5,
             "source": "ballerina-test",
-            "urgent": true
+            "urgent": true,
+            "version": <byte>1,
+            "ratio": <float>0.75
         }
     };
     check producer->send(message);
@@ -162,7 +166,7 @@ isolated function testSendMessageWithCorrelationId() returns error? {
 @test:Config {
     groups: ["producer"]
 }
-isolated function testSendMessageWithJmsType() returns error? {
+isolated function testSendMessageWithMessageType() returns error? {
     MessageProducer producer = check new (BROKER_URL, {
         destination: {queueName: TEST_QUEUE},
         messageVpn: MESSAGE_VPN,
@@ -174,7 +178,28 @@ isolated function testSendMessageWithJmsType() returns error? {
 
     Message message = {
         payload: TEXT_MESSAGE_CONTENT,
-        jmsType: "OrderMessage"
+        messageType: "OrderMessage"
+    };
+    check producer->send(message);
+    check producer->close();
+}
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithSenderId() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: TEST_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT,
+        senderId: "test-sender-123"
     };
     check producer->send(message);
     check producer->close();
@@ -263,7 +288,7 @@ isolated function testProducerWithCustomClientId() returns error? {
     MessageProducer producer = check new (BROKER_URL, {
         destination: {queueName: TEST_QUEUE},
         messageVpn: MESSAGE_VPN,
-        clientId: "test-client-123",
+        clientName: "test-client-123",
         auth: {
             username: BROKER_USERNAME,
             password: BROKER_PASSWORD
@@ -407,18 +432,44 @@ isolated function testProducerValidationWithInvalidCompressionLevel() {
     groups: ["producer", "validation"]
 }
 isolated function testProducerValidationWithLongUsername() {
+    string tooLongUsername = "";
+    foreach int i in 0 ..< 190 {
+        tooLongUsername += "a";
+    }
+
     MessageProducer|Error producer = new (BROKER_URL, {
         destination: {queueName: TEST_QUEUE},
         messageVpn: MESSAGE_VPN,
         auth: {
-            username: "this-is-a-very-long-username-that-exceeds-the-maximum-allowed-length",
+            username: tooLongUsername,
             password: BROKER_PASSWORD
         }
     });
-    test:assertTrue(producer is Error, "Expected validation error for username > 32 chars");
+    test:assertTrue(producer is Error, "Expected validation error for username > 189 chars");
     if producer is Error {
         test:assertTrue(producer.message().toLowerAscii().includes("username"),
                 "Error message should mention username");
+    }
+}
+
+@test:Config {
+    groups: ["producer", "validation"]
+}
+isolated function testProducerValidationTransactedRequiresGuaranteedDelivery() {
+    MessageProducer|Error producer = new (BROKER_URL, {
+        destination: {queueName: TEST_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        transacted: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+    test:assertTrue(producer is Error,
+            "Expected validation error when transacted is true with directTransport left at default true");
+    if producer is Error {
+        test:assertTrue(producer.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
     }
 }
 
@@ -460,7 +511,7 @@ isolated function testSendMessageWithDeliveryModeAndPriority() returns error? {
 
     Message message = {
         payload: TEXT_MESSAGE_CONTENT,
-        deliveryMode: 1,
+        deliveryMode: NON_PERSISTENT,
         priority: 7
     };
     check producer->send(message);
@@ -481,8 +532,99 @@ isolated function testSendMessageWithDeliveryModeAndPriority() returns error? {
     Message? receivedMessage = check consumer->receive(5.0);
     test:assertTrue(receivedMessage is Message, "Should receive message with delivery mode and priority set");
     if receivedMessage is Message {
-        test:assertEquals(receivedMessage.deliveryMode, 1, "Delivery mode should be overridden to non-persistent");
+        test:assertEquals(receivedMessage.deliveryMode, NON_PERSISTENT, "Delivery mode should be overridden to non-persistent");
         test:assertEquals(receivedMessage.priority, 7, "Priority should be overridden to 7");
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithTimeToLive() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_TTL_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    decimal ttlSeconds = 60d;
+    decimal sendTime = <decimal>time:utcNow()[0] * 1000;
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT,
+        timeToLive: ttlSeconds
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_TTL_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with time-to-live set");
+    if receivedMessage is Message {
+        int? expiration = receivedMessage?.expiration;
+        test:assertTrue(expiration is int, "Expiration should be populated by the provider");
+        if expiration is int {
+            // Provider computes JMSExpiration = send time + timeToLive; allow a generous window
+            // for clock skew/broker processing time rather than asserting an exact value.
+            test:assertTrue(<decimal>expiration >= sendTime + (ttlSeconds * 1000d) - 5000d,
+                    "Expiration should reflect the configured time-to-live");
+        }
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer"]
+}
+isolated function testSendMessageWithDefaultTimeToLive() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_DEFAULT_TTL_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_DEFAULT_TTL_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with default (no) time-to-live");
+    if receivedMessage is Message {
+        // JMSExpiration is 0 (never expires) when no timeToLive was set on send.
+        test:assertEquals(receivedMessage?.expiration, (), "Expiration should be unset when timeToLive is omitted");
     }
     check consumer->close();
 }
@@ -524,7 +666,7 @@ isolated function testSendMessageWithDefaultDeliveryModeAndPriority() returns er
     if receivedMessage is Message {
         // Falls back to the producer's own defaults (see MessageConverter.resolveDeliveryMode/resolvePriority)
         // rather than any value hardcoded in this test.
-        test:assertTrue(receivedMessage?.deliveryMode is int, "Delivery mode should be populated by the provider");
+        test:assertTrue(receivedMessage?.deliveryMode is DeliveryMode, "Delivery mode should be populated by the provider");
         test:assertTrue(receivedMessage?.priority is int, "Priority should be populated by the provider");
     }
     check consumer->close();
@@ -618,4 +760,252 @@ isolated function testSendMessageWithReplyToTopic() returns error? {
         }
     }
     check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer", "destination"]
+}
+isolated function testProducerSendUsesConfiguredDefaultDestination() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_DEFAULT_DESTINATION_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {payload: TEXT_MESSAGE_CONTENT};
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_DEFAULT_DESTINATION_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message sent to the configured default destination");
+    if receivedMessage is Message {
+        test:assertEquals(receivedMessage.payload, TEXT_MESSAGE_CONTENT);
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer", "destination"]
+}
+isolated function testProducerSendWithPerCallDestinationNoConfig() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {payload: TEXT_MESSAGE_CONTENT};
+    check producer->send(message, {queueName: PRODUCER_NO_CONFIG_DESTINATION_QUEUE});
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_NO_CONFIG_DESTINATION_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message sent via a per-call destination " +
+            "with no configured default");
+    if receivedMessage is Message {
+        test:assertEquals(receivedMessage.payload, TEXT_MESSAGE_CONTENT);
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer", "destination"]
+}
+isolated function testProducerSendPerCallDestinationOverridesConfigured() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_OVERRIDE_CONFIG_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {payload: TEXT_MESSAGE_CONTENT};
+    check producer->send(message, {queueName: PRODUCER_OVERRIDE_TARGET_QUEUE});
+    check producer->close();
+
+    MessageConsumer targetConsumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_OVERRIDE_TARGET_QUEUE
+        }
+    });
+    Message? receivedAtTarget = check targetConsumer->receive(5.0);
+    test:assertTrue(receivedAtTarget is Message, "Should receive message at the per-call override destination");
+    if receivedAtTarget is Message {
+        test:assertEquals(receivedAtTarget.payload, TEXT_MESSAGE_CONTENT);
+    }
+    check targetConsumer->close();
+
+    MessageConsumer configConsumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_OVERRIDE_CONFIG_QUEUE
+        }
+    });
+    Message? receivedAtConfigured = check configConsumer->receive(1.0);
+    test:assertTrue(receivedAtConfigured is (), "Configured default destination should not also receive " +
+            "the message when a per-call destination overrides it");
+    check configConsumer->close();
+}
+
+@test:Config {
+    groups: ["producer", "destination"]
+}
+isolated function testProducerSendOverrideAcrossDestinationTypes() returns error? {
+    // Topic subscriptions aren't durable by default, so the subscriber must exist before the
+    // message is published - mirrors the testReceiveWithTopic idiom in consumer_tests.bal.
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            topicName: PRODUCER_OVERRIDE_TARGET_TOPIC
+        }
+    });
+
+    runtime:sleep(0.5);
+
+    MessageProducer producer = check new (BROKER_URL, {
+        destination: {queueName: PRODUCER_OVERRIDE_CONFIG_QUEUE},
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {payload: TEXT_MESSAGE_CONTENT};
+    check producer->send(message, {topicName: PRODUCER_OVERRIDE_TARGET_TOPIC});
+    check producer->close();
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "A topic override should work even though the configured " +
+            "default destination is a queue");
+    if receivedMessage is Message {
+        test:assertEquals(receivedMessage.payload, TEXT_MESSAGE_CONTENT);
+    }
+    check consumer->close();
+}
+
+@test:Config {
+    groups: ["producer", "destination"]
+}
+isolated function testProducerSendFanOutWithSameProducer() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    check producer->send({payload: TEXT_MESSAGE_CONTENT}, {queueName: PRODUCER_FANOUT_QUEUE_A});
+    check producer->send({payload: TEXT_MESSAGE_CONTENT_2}, {queueName: PRODUCER_FANOUT_QUEUE_B});
+    check producer->close();
+
+    MessageConsumer consumerA = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_FANOUT_QUEUE_A
+        }
+    });
+    Message? receivedA = check consumerA->receive(5.0);
+    test:assertTrue(receivedA is Message, "Should receive the first fan-out message from the same producer");
+    if receivedA is Message {
+        test:assertEquals(receivedA.payload, TEXT_MESSAGE_CONTENT);
+    }
+    check consumerA->close();
+
+    MessageConsumer consumerB = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: PRODUCER_FANOUT_QUEUE_B
+        }
+    });
+    Message? receivedB = check consumerB->receive(5.0);
+    test:assertTrue(receivedB is Message, "Should receive the second fan-out message from the same producer");
+    if receivedB is Message {
+        test:assertEquals(receivedB.payload, TEXT_MESSAGE_CONTENT_2);
+    }
+    check consumerB->close();
+}
+
+@test:Config {
+    groups: ["producer", "destination", "negative"]
+}
+isolated function testProducerSendWithNoDestinationReturnsError() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+
+    Message message = {payload: TEXT_MESSAGE_CONTENT};
+    Error? result = producer->send(message);
+    test:assertTrue(result is Error, "send() should fail when no destination is configured or provided");
+    if result is Error {
+        test:assertTrue(result.message().toLowerAscii().includes("destination"),
+                "Error should mention the missing destination: " + result.message());
+    }
+    check producer->close();
 }

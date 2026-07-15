@@ -73,7 +73,8 @@ public final class Actions {
             connection.start();
 
             session = connection.createSession(producerConfig.transacted(), Session.AUTO_ACKNOWLEDGE);
-            Destination destination = createDestination(session, producerConfig.destination());
+            Destination destination = producerConfig.destination() != null ?
+                    createDestination(session, producerConfig.destination()) : null;
             MessageProducer jmsProducer = session.createProducer(destination);
 
             producer.addNativeData(NATIVE_PRODUCER, jmsProducer);
@@ -120,11 +121,13 @@ public final class Actions {
     /**
      * Sends a message to a destination in the Solace message broker.
      *
-     * @param producer Ballerina producer object
-     * @param bMessage Ballerina Solace JMS message representation
+     * @param producer          Ballerina producer object
+     * @param bMessage          Ballerina Solace JMS message representation
+     * @param bDestination      Ballerina destination configuration for this call, or {@code null}
+     *                          to use the producer's configured default destination
      * @return {@code null} on success, or Ballerina {@code jms:Error} on failure
      */
-    public static Object send(BObject producer, BMap<BString, Object> bMessage) {
+    public static Object send(BObject producer, BMap<BString, Object> bMessage, Object bDestination) {
         MessageProducer nativeProducer = (MessageProducer) producer.getNativeData(NATIVE_PRODUCER);
         Session nativeSession = (Session) producer.getNativeData(NATIVE_SESSION);
         if (nativeProducer == null || nativeSession == null) {
@@ -134,10 +137,24 @@ public final class Actions {
         CompletableFuture<Object> future = new CompletableFuture<>();
         Thread.startVirtualThread(() -> {
             try {
+                if (bDestination == null && nativeProducer.getDestination() == null) {
+                    future.complete(CommonUtils.createError(
+                            "No destination specified: configure 'destination' in ProducerConfiguration " +
+                                    "or pass a destination to send()"));
+                    return;
+                }
+
                 Message message = MessageConverter.toJmsMessage(nativeSession, bMessage);
                 int deliveryMode = MessageConverter.resolveDeliveryMode(bMessage, nativeProducer.getDeliveryMode());
                 int priority = MessageConverter.resolvePriority(bMessage, nativeProducer.getPriority());
-                nativeProducer.send(message, deliveryMode, priority, nativeProducer.getTimeToLive());
+                long timeToLive = MessageConverter.resolveTimeToLive(bMessage, nativeProducer.getTimeToLive());
+                if (bDestination != null) {
+                    Destination destination = createDestination(nativeSession,
+                            ProducerConfiguration.getDestination((BMap<BString, Object>) bDestination));
+                    nativeProducer.send(destination, message, deliveryMode, priority, timeToLive);
+                } else {
+                    nativeProducer.send(message, deliveryMode, priority, timeToLive);
+                }
                 future.complete(null);
             } catch (JMSException exception) {
                 future.complete(CommonUtils.createError(

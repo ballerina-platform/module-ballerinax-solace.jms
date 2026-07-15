@@ -34,32 +34,33 @@ import io.ballerina.runtime.api.values.BString;
  *                        matching this selector will be delivered to the consumer.
  *                        If {@code null}, no message selector is applied.
  *
- * @param noLocal         If {@code true}, messages published to the topic using the same connection
- *                        (or one with the same client ID) will not be delivered to this subscriber.
- *
- * @param consumerType    The type of message consumer. Expected values include types such as
- *                        "DEFAULT", "DURABLE", or "SHARED" depending on your implementation.
+ * @param durability      The durability of the subscription. Expected values are "DURABLE" or "TEMPORARY".
  *
  * @param subscriberName  An optional name to identify the subscription, especially for durable
- *                        or shared subscriptions.
+ *                        subscriptions.
  */
-public record TopicConfig(String ackMode, String topicName, String messageSelector, boolean noLocal,
-                          String consumerType, String subscriberName) implements ServiceConfig {
-    private static final BString SESSION_ACK_MODE = StringUtils.fromString("sessionAckMode");
+public record TopicConfig(String ackMode, String topicName, String messageSelector,
+                          String durability, String subscriberName) implements ServiceConfig {
+    private static final String DURABLE = "DURABLE";
+    private static final BString ACK_MODE = StringUtils.fromString("ackMode");
     private static final BString TOPIC_NAME = StringUtils.fromString("topicName");
     private static final BString MSG_SELECTOR = StringUtils.fromString("messageSelector");
-    private static final BString NO_LOCAL = StringUtils.fromString("noLocal");
-    private static final BString CONSUMER_TYPE = StringUtils.fromString("consumerType");
+    private static final BString DURABILITY = StringUtils.fromString("durability");
     private static final BString SUBSCRIBER_NAME = StringUtils.fromString("subscriberName");
+
+    public TopicConfig {
+        if (DURABLE.equalsIgnoreCase(durability) && (subscriberName == null || subscriberName.isEmpty())) {
+            throw new IllegalArgumentException("subscriberName is required when durability is DURABLE");
+        }
+    }
 
     TopicConfig(BMap<BString, Object> configurations) {
         this(
-                configurations.getStringValue(SESSION_ACK_MODE).getValue(),
+                configurations.getStringValue(ACK_MODE).getValue(),
                 configurations.getStringValue(TOPIC_NAME).getValue(),
                 configurations.containsKey(MSG_SELECTOR) ?
                         configurations.getStringValue(MSG_SELECTOR).getValue() : null,
-                configurations.getBooleanValue(NO_LOCAL),
-                configurations.getStringValue(CONSUMER_TYPE).getValue(),
+                configurations.getStringValue(DURABILITY).getValue(),
                 configurations.containsKey(SUBSCRIBER_NAME) ?
                         configurations.getStringValue(SUBSCRIBER_NAME).getValue() : null
         );

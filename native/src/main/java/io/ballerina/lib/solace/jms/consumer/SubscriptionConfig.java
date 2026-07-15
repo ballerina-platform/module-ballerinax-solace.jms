@@ -32,7 +32,7 @@ public sealed interface SubscriptionConfig permits QueueConfig, TopicConfig {
      *
      * @return acknowledgement mode
      */
-    AcknowledgementMode sessionAckMode();
+    AcknowledgementMode ackMode();
 
     /**
      * Returns the message selector (optional).
@@ -43,6 +43,10 @@ public sealed interface SubscriptionConfig permits QueueConfig, TopicConfig {
 
     /**
      * Factory method to create SubscriptionConfig from Ballerina map.
+     * <p>
+     * Queue is the default when neither {@code queueName} nor {@code topicName} is present: a topic subscription
+     * always requires a {@code topicName}, so the only legitimate reason to omit both is an anonymous temporary
+     * queue (a {@code durability: TEMPORARY} queue with no name).
      *
      * @param config Ballerina subscription config map
      * @return QueueConfig or TopicConfig
@@ -51,13 +55,9 @@ public sealed interface SubscriptionConfig permits QueueConfig, TopicConfig {
         BString queueNameKey = StringUtils.fromString("queueName");
         BString topicNameKey = StringUtils.fromString("topicName");
 
-        if (config.containsKey(queueNameKey)) {
-            return new QueueConfig(config);
-        } else if (config.containsKey(topicNameKey)) {
+        if (config.containsKey(topicNameKey) && !config.containsKey(queueNameKey)) {
             return new TopicConfig(config);
-        } else {
-            throw new IllegalArgumentException(
-                    "Subscription config must contain either 'queueName' or 'topicName'");
         }
+        return new QueueConfig(config);
     }
 }

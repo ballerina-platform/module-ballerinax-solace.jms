@@ -27,12 +27,12 @@ import io.ballerina.runtime.api.values.BString;
  *
  * @param enabled      {@code true} if certificate validation is enabled
  * @param validateDate {@code true} to validate certificate's expiration date
- * @param validateHost {@code true} to validate that certificate's common name matches broker hostname
+ * @param validateHostname {@code true} to validate that certificate's common name matches broker hostname
  */
-public record ValidationConfig(boolean enabled, boolean validateDate, boolean validateHost) {
+public record ValidationConfig(boolean enabled, boolean validateDate, boolean validateHostname) {
     private static final BString ENABLED = StringUtils.fromString("enabled");
     private static final BString VALIDATE_DATE = StringUtils.fromString("validateDate");
-    private static final BString VALIDATE_HOST = StringUtils.fromString("validateHost");
+    private static final BString VALIDATE_HOSTNAME = StringUtils.fromString("validateHostname");
 
     /**
      * Creates a ValidationConfig from Ballerina configuration map.
@@ -43,7 +43,7 @@ public record ValidationConfig(boolean enabled, boolean validateDate, boolean va
         this(
                 config.getBooleanValue(ENABLED),
                 config.getBooleanValue(VALIDATE_DATE),
-                config.getBooleanValue(VALIDATE_HOST)
+                config.getBooleanValue(VALIDATE_HOSTNAME)
         );
     }
 }

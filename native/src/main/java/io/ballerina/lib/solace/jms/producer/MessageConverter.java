@@ -18,8 +18,12 @@
 
 package io.ballerina.lib.solace.jms.producer;
 
+import com.solacesystems.jms.message.SolMessage;
+import io.ballerina.lib.solace.jms.DeliveryMode;
+import io.ballerina.lib.solace.jms.config.ConfigUtils;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BArray;
+import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
@@ -38,10 +42,12 @@ public final class MessageConverter {
     private static final BString PAYLOAD = StringUtils.fromString("payload");
     private static final BString PROPERTIES = StringUtils.fromString("properties");
     private static final BString CORRELATION_ID = StringUtils.fromString("correlationId");
-    private static final BString JMS_TYPE = StringUtils.fromString("jmsType");
+    private static final BString MESSAGE_TYPE = StringUtils.fromString("messageType");
     private static final BString REPLY_TO = StringUtils.fromString("replyTo");
+    private static final BString SENDER_ID = StringUtils.fromString("senderId");
     private static final BString DELIVERY_MODE = StringUtils.fromString("deliveryMode");
     private static final BString PRIORITY = StringUtils.fromString("priority");
+    private static final BString TIME_TO_LIVE = StringUtils.fromString("timeToLive");
 
     private MessageConverter() {}
 
@@ -65,11 +71,11 @@ public final class MessageConverter {
             }
         }
 
-        // Set JMS type if present
-        if (bMessage.containsKey(JMS_TYPE)) {
-            Object jmsType = bMessage.get(JMS_TYPE);
-            if (jmsType instanceof BString bJmsType) {
-                jmsMessage.setJMSType(bJmsType.getValue());
+        // Set message type if present
+        if (bMessage.containsKey(MESSAGE_TYPE)) {
+            Object messageType = bMessage.get(MESSAGE_TYPE);
+            if (messageType instanceof BString bMessageType) {
+                jmsMessage.setJMSType(bMessageType.getValue());
             }
         }
 
@@ -91,6 +97,14 @@ public final class MessageConverter {
             }
         }
 
+        // Set sender ID if present (Solace-specific extension, only available via SolMessage)
+        if (bMessage.containsKey(SENDER_ID) && jmsMessage instanceof SolMessage solMessage) {
+            Object senderId = bMessage.get(SENDER_ID);
+            if (senderId instanceof BString bSenderId) {
+                solMessage.setSenderID(bSenderId.getValue());
+            }
+        }
+
         return jmsMessage;
     }
 
@@ -102,8 +116,8 @@ public final class MessageConverter {
      * @return the delivery mode set on the message, or {@code defaultDeliveryMode} if absent
      */
     static int resolveDeliveryMode(BMap<BString, Object> bMessage, int defaultDeliveryMode) {
-        if (bMessage.containsKey(DELIVERY_MODE) && bMessage.get(DELIVERY_MODE) instanceof Long deliveryMode) {
-            return deliveryMode.intValue();
+        if (bMessage.containsKey(DELIVERY_MODE) && bMessage.get(DELIVERY_MODE) instanceof BString deliveryMode) {
+            return DeliveryMode.fromString(deliveryMode.getValue());
         }
         return defaultDeliveryMode;
     }
@@ -120,6 +134,21 @@ public final class MessageConverter {
             return priority.intValue();
         }
         return defaultPriority;
+    }
+
+    /**
+     * Resolves the time-to-live to use for a send operation.
+     *
+     * @param bMessage             Ballerina message map
+     * @param defaultTimeToLive    time-to-live in milliseconds to fall back to when not set on the message
+     * @return the time-to-live in milliseconds set on the message (converted from seconds), or
+     *         {@code defaultTimeToLive} if absent
+     */
+    static long resolveTimeToLive(BMap<BString, Object> bMessage, long defaultTimeToLive) {
+        if (bMessage.containsKey(TIME_TO_LIVE) && bMessage.get(TIME_TO_LIVE) instanceof BDecimal timeToLive) {
+            return ConfigUtils.decimalToMillis(timeToLive.decimalValue());
+        }
+        return defaultTimeToLive;
     }
 
     private static Message createMessageByContentType(Session session, Object content) throws JMSException {

@@ -22,6 +22,7 @@ import io.ballerina.lib.solace.jms.CommonUtils;
 
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
+import javax.jms.Queue;
 import javax.jms.Session;
 
 /**
@@ -36,25 +37,28 @@ public final class ConsumerUtils {
      *
      * @param session            JMS session
      * @param subscriptionConfig subscription configuration
-     * @return JMS MessageConsumer
+     * @return the created MessageConsumer, plus the resolved destination name (queue or topic)
      * @throws JMSException if consumer creation fails
      */
-    public static MessageConsumer createConsumer(Session session, SubscriptionConfig subscriptionConfig)
+    public static ConsumerCreationResult createConsumer(Session session, SubscriptionConfig subscriptionConfig)
             throws JMSException {
         return switch (subscriptionConfig) {
-            case QueueConfig queueConfig -> CommonUtils.createQueueConsumer(
-                    session,
-                    queueConfig.queueName(),
-                    queueConfig.messageSelector()
-            );
-            case TopicConfig topicConfig -> CommonUtils.createTopicConsumer(
-                    session,
-                    topicConfig.topicName(),
-                    topicConfig.messageSelector(),
-                    topicConfig.noLocal(),
-                    topicConfig.consumerType(),
-                    topicConfig.subscriberName()
-            );
+            case QueueConfig queueConfig -> {
+                Queue queue = CommonUtils.createQueue(session, queueConfig.queueName(), queueConfig.durability());
+                MessageConsumer consumer = CommonUtils.createConsumerForQueue(
+                        session, queue, queueConfig.messageSelector());
+                yield new ConsumerCreationResult(consumer, queue.getQueueName());
+            }
+            case TopicConfig topicConfig -> {
+                MessageConsumer consumer = CommonUtils.createTopicConsumer(
+                        session,
+                        topicConfig.topicName(),
+                        topicConfig.messageSelector(),
+                        topicConfig.durability(),
+                        topicConfig.subscriberName()
+                );
+                yield new ConsumerCreationResult(consumer, topicConfig.topicName());
+            }
         };
     }
 }

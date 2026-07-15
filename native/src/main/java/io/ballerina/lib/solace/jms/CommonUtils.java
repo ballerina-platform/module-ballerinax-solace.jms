@@ -18,14 +18,15 @@
 
 package io.ballerina.lib.solace.jms;
 
+import com.solacesystems.jms.SolConnectionFactory;
 import com.solacesystems.jms.SupportedProperty;
 import io.ballerina.lib.solace.jms.config.ConnectionConfiguration;
-import io.ballerina.lib.solace.jms.config.auth.BasicAuthConfig;
-import io.ballerina.lib.solace.jms.config.auth.KerberosConfig;
-import io.ballerina.lib.solace.jms.config.auth.OAuth2Config;
+import io.ballerina.lib.solace.jms.config.auth.BasicAuthConfiguration;
+import io.ballerina.lib.solace.jms.config.auth.KerberosConfiguration;
+import io.ballerina.lib.solace.jms.config.auth.OAuth2Configuration;
 import io.ballerina.lib.solace.jms.config.retry.RetryConfig;
 import io.ballerina.lib.solace.jms.config.ssl.SecureSocketConfig;
-import io.ballerina.lib.solace.jms.consumer.ConsumerType;
+import io.ballerina.lib.solace.jms.consumer.Durability;
 import io.ballerina.runtime.api.creators.ErrorCreator;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BError;
@@ -63,8 +64,8 @@ public final class CommonUtils {
         props.put(SupportedProperty.SOLACE_JMS_VPN, config.messageVpn());
         props.put(SupportedProperty.SOLACE_JMS_DYNAMIC_DURABLES, config.enableDynamicDurables());
 
-        if (config.clientId() != null) {
-            props.put(SupportedProperty.SOLACE_JMS_JNDI_CLIENT_ID, config.clientId());
+        if (config.clientName() != null) {
+            props.put(SupportedProperty.SOLACE_JMS_JNDI_CLIENT_ID, config.clientName());
         }
         if (config.clientDescription() != null && !config.clientDescription().isEmpty()) {
             props.put(SupportedProperty.SOLACE_JMS_JNDI_CLIENT_DESCRIPTION, config.clientDescription());
@@ -91,7 +92,7 @@ public final class CommonUtils {
         // Authentication priority: explicit auth config > client certificate (keyStore) > basic auth (default)
         if (config.auth() != null) {
             switch (config.auth()) {
-                case BasicAuthConfig basic -> {
+                case BasicAuthConfiguration basic -> {
                     props.put(SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME,
                             SupportedProperty.AUTHENTICATION_SCHEME_BASIC);
                     props.put(Context.SECURITY_PRINCIPAL, basic.username());
@@ -99,7 +100,7 @@ public final class CommonUtils {
                         props.put(Context.SECURITY_CREDENTIALS, basic.password());
                     }
                 }
-                case KerberosConfig kerberos -> {
+                case KerberosConfiguration kerberos -> {
                     props.put(SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME,
                             SupportedProperty.AUTHENTICATION_SCHEME_GSS_KRB);
                     props.put(SupportedProperty.SOLACE_JMS_KRB_MUTUAL_AUTHENTICATION,
@@ -108,8 +109,10 @@ public final class CommonUtils {
                     if (kerberos.jaasLoginContext() != null) {
                         props.put(SupportedProperty.SOLACE_JMS_JAAS_LOGIN_CONTEXT, kerberos.jaasLoginContext());
                     }
+                    props.put(SupportedProperty.SOLACE_JMS_JAAS_CONFIG_FILE_RELOAD_ENABLED,
+                            kerberos.jaasConfigFileReloadEnabled());
                 }
-                case OAuth2Config oauth -> {
+                case OAuth2Configuration oauth -> {
                     props.put(SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME,
                             SupportedProperty.AUTHENTICATION_SCHEME_OAUTH2);
                     props.put(SupportedProperty.SOLACE_JMS_OAUTH2_ISSUER_IDENTIFIER, oauth.issuer());
@@ -158,10 +161,11 @@ public final class CommonUtils {
             props.put(SupportedProperty.SOLACE_JMS_SSL_VALIDATE_CERTIFICATE_DATE,
                     sslConfig.validation().validateDate());
             props.put(SupportedProperty.SOLACE_JMS_SSL_VALIDATE_CERTIFICATE_HOST,
-                    sslConfig.validation().validateHost());
+                    sslConfig.validation().validateHostname());
 
-            if (sslConfig.protocols() != null && !sslConfig.protocols().isEmpty()) {
-                props.put(SupportedProperty.SOLACE_JMS_SSL_PROTOCOL, String.join(",", sslConfig.protocols()));
+            if (sslConfig.excludedProtocols() != null && !sslConfig.excludedProtocols().isEmpty()) {
+                props.put(SupportedProperty.SOLACE_JMS_SSL_EXCLUDED_PROTOCOLS,
+                        String.join(",", sslConfig.excludedProtocols()));
             }
 
             if (sslConfig.cipherSuites() != null && !sslConfig.cipherSuites().isEmpty()) {
@@ -176,6 +180,24 @@ public final class CommonUtils {
         }
 
         return props;
+    }
+
+    /**
+     * Applies guaranteed-delivery (Assured Delivery) receive flow-control settings to the given connection
+     * factory. These settings are only effective when the connection uses guaranteed (persistent) delivery,
+     * i.e. when {@code directTransport} is {@code false}.
+     *
+     * @param factory the connection factory to configure
+     * @param config  connection configuration containing the flow-control settings
+     */
+    public static void applyFlowControlSettings(SolConnectionFactory factory, ConnectionConfiguration config) {
+        if (config.transportWindowSize() != null) {
+            factory.setReceiveADWindowSize(config.transportWindowSize());
+        }
+        factory.setReceiveAdAckThreshold(config.ackThreshold());
+        if (config.ackTimerMillis() != null) {
+            factory.setReceiveADAckTimerInMillis(Math.toIntExact(config.ackTimerMillis()));
+        }
     }
 
     /**
@@ -212,8 +234,36 @@ public final class CommonUtils {
      */
     public static MessageConsumer createQueueConsumer(Session session, String queueName, String messageSelector)
             throws JMSException {
-        Queue queue = session.createQueue(queueName);
+        return createConsumerForQueue(session, session.createQueue(queueName), messageSelector);
+    }
 
+    /**
+     * Creates a {@link Queue} - either a durable, named queue, or a temporary (provider-named) one. Real JMS
+     * temporary queues never take a caller-supplied name ({@link Session#createTemporaryQueue()} takes no
+     * arguments) - a TEMPORARY durability with a queueName is rejected earlier, at Ballerina config validation
+     * time.
+     *
+     * @param session     JMS session
+     * @param queueName   Queue name (only used when durability is DURABLE)
+     * @param durability  DURABLE or TEMPORARY
+     * @return the created Queue
+     * @throws JMSException if queue creation fails
+     */
+    public static Queue createQueue(Session session, String queueName, Durability durability) throws JMSException {
+        return durability == Durability.TEMPORARY ? session.createTemporaryQueue() : session.createQueue(queueName);
+    }
+
+    /**
+     * Creates a JMS MessageConsumer for an already-created queue.
+     *
+     * @param session         JMS session
+     * @param queue           the queue to consume from
+     * @param messageSelector Optional message selector
+     * @return JMS MessageConsumer
+     * @throws JMSException if consumer creation fails
+     */
+    public static MessageConsumer createConsumerForQueue(Session session, Queue queue, String messageSelector)
+            throws JMSException {
         if (messageSelector != null && !messageSelector.isEmpty()) {
             return session.createConsumer(queue, messageSelector);
         } else {
@@ -227,31 +277,30 @@ public final class CommonUtils {
      * @param session         JMS session
      * @param topicName       Topic name
      * @param messageSelector Optional message selector
-     * @param noLocal         No local flag
-     * @param consumerType    Consumer type (DEFAULT or DURABLE)
+     * @param durability      Durability (TEMPORARY or DURABLE)
      * @param subscriberName  Subscriber name (required for DURABLE)
      * @return JMS MessageConsumer
      * @throws JMSException if consumer creation fails
      */
     public static MessageConsumer createTopicConsumer(Session session, String topicName, String messageSelector,
-                                                      boolean noLocal, ConsumerType consumerType,
+                                                      Durability durability,
                                                       String subscriberName) throws JMSException {
         Topic topic = session.createTopic(topicName);
 
-        return switch (consumerType) {
-            case DEFAULT -> {
+        return switch (durability) {
+            case TEMPORARY -> {
                 if (messageSelector != null && !messageSelector.isEmpty()) {
-                    yield session.createConsumer(topic, messageSelector, noLocal);
+                    yield session.createConsumer(topic, messageSelector);
                 } else {
                     yield session.createConsumer(topic);
                 }
             }
             case DURABLE -> {
                 if (subscriberName == null || subscriberName.isEmpty()) {
-                    throw new IllegalArgumentException("Subscriber name is required for DURABLE consumer type");
+                    throw new IllegalArgumentException("subscriberName is required when durability is DURABLE");
                 }
                 if (messageSelector != null && !messageSelector.isEmpty()) {
-                    yield session.createDurableSubscriber(topic, subscriberName, messageSelector, noLocal);
+                    yield session.createDurableSubscriber(topic, subscriberName, messageSelector, false);
                 } else {
                     yield session.createDurableSubscriber(topic, subscriberName);
                 }
@@ -287,10 +336,9 @@ public final class CommonUtils {
         }
         return Arrays.stream(protocols).map(protocol -> {
             return switch (protocol) {
-                case "sslv3" -> "SSLv3";
-                case "tlsv1" -> "TLSv1";
-                case "tlsv11" -> "TLSv1.1";
-                case "tlsv12" -> "TLSv1.2";
+                case "TLSV1_1" -> "tlsv1.1";
+                case "TLSV1_2" -> "tlsv1.2";
+                case "TLSV1_3" -> "tlsv1.3";
                 default -> throw new IllegalArgumentException("Unsupported protocol: " + protocol);
             };
         }).toArray(String[]::new);

@@ -39,7 +39,7 @@ isolated function testAnnotationNotFound() returns error? {
 }
 isolated function testSvcWithResourceMethods() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -64,7 +64,7 @@ isolated function testSvcWithResourceMethods() returns error? {
 }
 isolated function testSvcWithNoRemoteMethods() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {};
     Error? result = solaceListener.attach(svc);
@@ -82,7 +82,7 @@ isolated function testSvcWithNoRemoteMethods() returns error? {
 }
 isolated function testSvcWithInvalidRemoteMethod() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -104,7 +104,7 @@ isolated function testSvcWithInvalidRemoteMethod() returns error? {
 }
 isolated function testSvcMethodWithAdditionalParameters() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -116,7 +116,7 @@ isolated function testSvcMethodWithAdditionalParameters() returns error? {
     if result is Error {
         test:assertEquals(
                 result.message(),
-                "Failed to attach service to listener: onMessage method can have only have either one or two parameters.",
+                "Failed to attach service to listener: onMessage method can only have either one or two parameters.",
                 "Invalid error message received");
     }
 }
@@ -126,7 +126,7 @@ isolated function testSvcMethodWithAdditionalParameters() returns error? {
 }
 isolated function testSvcMethodWithInvalidParams() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -146,9 +146,32 @@ isolated function testSvcMethodWithInvalidParams() returns error? {
 @test:Config {
     groups: ["service", "validations"]
 }
+isolated function testSvcMethodWithDuplicateMessageParam() returns error? {
+    Service svc = @ServiceConfig {
+        ackMode: CLIENT_ACKNOWLEDGE,
+        queueName: "test-svc-attach"
+    } service object {
+
+        remote function onMessage(Message message1, Message message2) returns error? {
+        }
+    };
+    Error? result = solaceListener.attach(svc);
+    test:assertTrue(result is Error);
+    if result is Error {
+        test:assertEquals(
+                result.message(),
+                "Failed to attach service to listener: onMessage method must not declare more than one "
+                        + "'solace.jms:Message' parameter.",
+                "Invalid error message received");
+    }
+}
+
+@test:Config {
+    groups: ["service", "validations"]
+}
 isolated function testSvcMethodMandatoryParamMissing() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -170,7 +193,7 @@ isolated function testSvcMethodMandatoryParamMissing() returns error? {
 }
 isolated function testSvcOnErrorWithoutParameters() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -195,7 +218,7 @@ isolated function testSvcOnErrorWithoutParameters() returns error? {
 }
 isolated function testSvcOnErrorWithInvalidParameter() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -220,7 +243,7 @@ isolated function testSvcOnErrorWithInvalidParameter() returns error? {
 }
 isolated function testSvcOnErrorWithAdditionalParameters() returns error? {
     Service svc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test-svc-attach"
     } service object {
 
@@ -245,7 +268,7 @@ isolated function testSvcOnErrorWithAdditionalParameters() returns error? {
 }
 isolated function testDetachFailure() returns error? {
     Service consumerSvc = @ServiceConfig {
-        sessionAckMode: CLIENT_ACKNOWLEDGE,
+        ackMode: CLIENT_ACKNOWLEDGE,
         queueName: "test.svc.attach"
     } service object {
         remote function onMessage(Message message, Caller caller) returns error? {
@@ -259,4 +282,53 @@ isolated function testDetachFailure() returns error? {
                 "Could not find the native Solace message receiver",
                 "Invalid error message");
     }
+}
+
+@test:Config {
+    groups: ["service", "validations"]
+}
+isolated function testDurableTopicServiceMissingSubscriberName() returns error? {
+    Service consumerSvc = @ServiceConfig {
+        topicName: TEST_TOPIC,
+        durability: DURABLE
+    } service object {
+        remote function onMessage(Message message) returns error? {
+        }
+    };
+    Error? result = solaceListener.attach(consumerSvc);
+    test:assertTrue(result is Error);
+    if result is Error {
+        test:assertEquals(
+                result.message(),
+                "Failed to attach service to listener: subscriberName is required when durability is DURABLE",
+                "Invalid error message");
+    }
+}
+
+@test:Config {
+    groups: ["service", "validations"]
+}
+isolated function testListenerAttachTransactedRequiresGuaranteedDelivery() returns error? {
+    Listener msgListener = check new Listener(BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        }
+    });
+    Service consumerSvc = @ServiceConfig {
+        ackMode: SESSION_TRANSACTED,
+        queueName: "test-svc-attach"
+    } service object {
+        remote function onMessage(Message message) returns error? {
+        }
+    };
+    Error? result = msgListener.attach(consumerSvc);
+    test:assertTrue(result is Error,
+            "Expected validation error when ackMode is SESSION_TRANSACTED with directTransport left at default true");
+    if result is Error {
+        test:assertTrue(result.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
+    check msgListener.immediateStop();
 }

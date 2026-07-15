@@ -33,7 +33,7 @@ public isolated client class MessageConsumer {
     # + config - Consumer configuration including connection settings and subscription details
     # + return - A `jms:Error` if initialization fails or else `()`
     public isolated function init(string url, *ConsumerConfiguration config) returns Error? {
-        Error? validated = validateConfigurations(config);
+        Error? validated = validateConsumerConfigurations(config);
         if validated is Error {
             return error Error(
                 string `Error occurred while validating the consumer configurations: ${validated.message()}`, validated);
@@ -51,10 +51,11 @@ public isolated client class MessageConsumer {
     # jms:Message? message = check consumer->receive(5.0);
     # ```
     #
-    # + timeout - The maximum time to wait for a message in seconds. Default is 10.0 seconds
+    # + timeout - The maximum time to wait for a message in seconds. A nil or zero timeout blocks
+    # indefinitely, matching the underlying JMS default
     # + T - Optional type description of the expected data type
     # + return - The received `Message`, `()` if no message is available within the timeout, or a `jms:Error` if there is an error
-    isolated remote function receive(decimal timeout = 10.0, typedesc<Message> T = <>) returns T|Error? = @java:Method {
+    isolated remote function receive(decimal? timeout = (), typedesc<Message> T = <>) returns T|Error? = @java:Method {
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
@@ -70,7 +71,7 @@ public isolated client class MessageConsumer {
     } external;
 
     # Acknowledges the specified message. This method should only be called when the consumer is configured
-    # with `sessionAckMode: CLIENT_ACKNOWLEDGE`.
+    # with `ackMode: CLIENT_ACKNOWLEDGE`.
     # ```ballerina
     # check consumer->ack(message);
     # ```
@@ -82,26 +83,24 @@ public isolated client class MessageConsumer {
     } external;
 
     # Commits all messages received in this transaction and releases any locks currently held.
-    # This method should only be called when the consumer is configured with `sessionAckMode: SESSION_TRANSACTED`.
+    # This method should only be called when the consumer is configured with `ackMode: SESSION_TRANSACTED`.
     # ```ballerina
     # check consumer->'commit();
     # ```
     #
     # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'commit() returns Error? = @java:Method {
-        name: "commit",
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
     # Rolls back any messages received in this transaction and releases any locks currently held.
-    # This method should only be called when the consumer is configured with `sessionAckMode: SESSION_TRANSACTED`.
+    # This method should only be called when the consumer is configured with `ackMode: SESSION_TRANSACTED`.
     # ```ballerina
     # check consumer->'rollback();
     # ```
     #
     # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'rollback() returns Error? = @java:Method {
-        name: "rollback",
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 
@@ -112,6 +111,16 @@ public isolated client class MessageConsumer {
     #
     # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function close() returns Error? = @java:Method {
+        'class: "io.ballerina.lib.solace.jms.consumer.Actions"
+    } external;
+
+    # Get the resolved name of the destination (queue or topic) this consumer is bound to.
+    #
+    # For a `durability: TEMPORARY` queue created without a `queueName`, this returns the provider-generated
+    # name - useful for publishing it as a `replyTo` address before any message has been received.
+    #
+    # + return - The destination name
+    isolated remote function destinationName() returns string = @java:Method {
         'class: "io.ballerina.lib.solace.jms.consumer.Actions"
     } external;
 }

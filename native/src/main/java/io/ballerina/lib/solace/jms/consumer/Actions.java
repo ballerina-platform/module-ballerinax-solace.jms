@@ -23,6 +23,7 @@ import com.solacesystems.jms.SolJmsUtility;
 import io.ballerina.lib.solace.jms.BallerinaSolaceDatabindingException;
 import io.ballerina.lib.solace.jms.CommonUtils;
 import io.ballerina.lib.solace.jms.config.ConnectionConfiguration;
+import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
@@ -47,6 +48,7 @@ public final class Actions {
     private static final String NATIVE_CONSUMER = "native.consumer";
     private static final String NATIVE_SESSION = "native.session";
     private static final String NATIVE_CONNECTION = "native.connection";
+    private static final String NATIVE_DESTINATION = "native.destination";
 
     private Actions() {
     }
@@ -72,21 +74,23 @@ public final class Actions {
             // Configure transport mode from connection configuration
             connectionFactory.setDirectTransport(connConfig.directTransport());
             connectionFactory.setDirectOptimized(connConfig.directOptimized());
+            CommonUtils.applyFlowControlSettings(connectionFactory, connConfig);
 
             Connection connection = connectionFactory.createConnection();
             connection.start();
 
             // Create session with acknowledgement mode from subscription config
-            int ackMode = subscriptionConfig.sessionAckMode().getJmsMode();
+            int ackMode = subscriptionConfig.ackMode().getJmsMode();
             boolean transacted = (ackMode == Session.SESSION_TRANSACTED);
             Session session = connection.createSession(transacted, ackMode);
 
             // Create consumer based on subscription config
-            MessageConsumer jmsConsumer = ConsumerUtils.createConsumer(session, subscriptionConfig);
+            ConsumerCreationResult result = ConsumerUtils.createConsumer(session, subscriptionConfig);
 
-            consumer.addNativeData(NATIVE_CONSUMER, jmsConsumer);
+            consumer.addNativeData(NATIVE_CONSUMER, result.consumer());
             consumer.addNativeData(NATIVE_SESSION, session);
             consumer.addNativeData(NATIVE_CONNECTION, connection);
+            consumer.addNativeData(NATIVE_DESTINATION, result.destinationName());
 
             return null;
         } catch (JMSException exception) {
@@ -104,17 +108,18 @@ public final class Actions {
      * Receives the next message from the Solace broker within the specified timeout.
      *
      * @param consumer  Ballerina consumer object
-     * @param timeout   Timeout in seconds
+     * @param timeout   Timeout in seconds, or {@code null} to block indefinitely
      * @param bTypedesc Expected message type
      * @return Ballerina message, {@code null} if no message available, or {@code jms:Error} on failure
      */
-    public static Object receive(BObject consumer, BDecimal timeout, BTypedesc bTypedesc) {
+    public static Object receive(BObject consumer, Object timeout, BTypedesc bTypedesc) {
         MessageConsumer nativeConsumer = (MessageConsumer) consumer.getNativeData(NATIVE_CONSUMER);
 
         CompletableFuture<Object> future = new CompletableFuture<>();
         Thread.startVirtualThread(() -> {
             try {
-                BigDecimal timeoutDecimal = timeout.decimalValue();
+                BigDecimal timeoutDecimal =
+                        timeout instanceof BDecimal bDecimal ? bDecimal.decimalValue() : BigDecimal.ZERO;
                 long timeoutMillis = timeoutDecimal.multiply(BigDecimal.valueOf(1000)).longValue();
                 Message message = nativeConsumer.receive(timeoutMillis);
 
@@ -284,5 +289,17 @@ public final class Actions {
                     String.format("Error occurred while closing the message consumer: %s",
                             exception.getMessage()), exception);
         }
+    }
+
+    /**
+     * Returns the resolved name of the destination (queue or topic) this consumer is bound to. For a TEMPORARY
+     * queue created without a name, this is the provider-generated name.
+     *
+     * @param consumer the Ballerina consumer object
+     * @return the destination name
+     */
+    public static BString destinationName(BObject consumer) {
+        String destinationName = (String) consumer.getNativeData(NATIVE_DESTINATION);
+        return StringUtils.fromString(destinationName);
     }
 }

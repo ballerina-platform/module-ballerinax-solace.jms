@@ -19,11 +19,11 @@
 package io.ballerina.lib.solace.jms.consumer;
 
 /**
- * JMS message consumer types.
+ * Durability of a JMS queue or topic subscription.
  */
-public enum ConsumerType {
-    /** Default message consumer. */
-    DEFAULT,
-    /** Durable subscriber. */
+public enum Durability {
+    /** Temporary (ephemeral, provider-named) queue or non-durable topic consumer. */
+    TEMPORARY,
+    /** Durable (pre-provisioned/named) queue or durable topic subscriber. */
     DURABLE
 }

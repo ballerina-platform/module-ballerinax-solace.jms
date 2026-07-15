@@ -48,6 +48,7 @@ public class Listener {
     private static final String NATIVE_SERVICE_LIST = "native.service.list";
     private static final String NATIVE_SERVICE = "native.service";
     private static final String NATIVE_RECEIVER = "native.receiver";
+    private static final String NATIVE_DIRECT_TRANSPORT = "native.directTransport";
     private static final String LISTENER_STARTED = "listener.started";
     private static final String AUTO_ACKNOWLEDGE_MODE = "AUTO_ACKNOWLEDGE";
     private static final String CLIENT_ACKNOWLEDGE_MODE = "CLIENT_ACKNOWLEDGE";
@@ -63,9 +64,11 @@ public class Listener {
             SolConnectionFactory connectionFactory = SolJmsUtility.createConnectionFactory(connectionProps);
             connectionFactory.setDirectTransport(connConfig.directTransport());
             connectionFactory.setDirectOptimized(connConfig.directOptimized());
+            CommonUtils.applyFlowControlSettings(connectionFactory, connConfig);
             Connection connection = connectionFactory.createConnection();
             bListener.addNativeData(NATIVE_CONNECTION, connection);
             bListener.addNativeData(NATIVE_SERVICE_LIST, new ArrayList<BObject>());
+            bListener.addNativeData(NATIVE_DIRECT_TRANSPORT, connConfig.directTransport());
         } catch (Exception e) {
             return CommonUtils.createError(String.format("Failed to initialize listener: %s", e.getMessage()), e);
         }
@@ -79,9 +82,16 @@ public class Listener {
             Service.validateService(env.getRuntime(), bService);
             Service nativeService = new Service(bService);
             ServiceConfig svcConfig = nativeService.getServiceConfig();
-            int sessionAckMode = getSessionAckMode(svcConfig.ackMode());
-            boolean transacted = Session.SESSION_TRANSACTED == sessionAckMode;
-            Session session = connection.createSession(transacted, sessionAckMode);
+            int jmsAckMode = getJmsAckMode(svcConfig.ackMode());
+            boolean transacted = Session.SESSION_TRANSACTED == jmsAckMode;
+            boolean directTransport = (Boolean) bListener.getNativeData(NATIVE_DIRECT_TRANSPORT);
+            if (transacted && directTransport) {
+                return CommonUtils.createError(
+                        "Failed to attach service to listener: directTransport must be false when ackMode is "
+                                + "SESSION_TRANSACTED: Solace does not support transacted sessions over direct "
+                                + "transport");
+            }
+            Session session = connection.createSession(transacted, jmsAckMode);
             MessageConsumer consumer = ListenerUtils.createConsumer(session, svcConfig);
             MessageDispatcher messageDispatcher = new MessageDispatcher(env.getRuntime(), nativeService, session);
             MessageReceiver receiver = new MessageReceiver(session, consumer, messageDispatcher);
@@ -95,14 +105,14 @@ public class Listener {
                     receiver.consume();
                 }
             }
-        } catch (BError | JMSException e) {
+        } catch (BError | JMSException | IllegalArgumentException e) {
             String errorMsg = Objects.isNull(e.getMessage()) ? "Unknown error" : e.getMessage();
             return CommonUtils.createError(String.format("Failed to attach service to listener: %s", errorMsg), e);
         }
         return null;
     }
 
-    static int getSessionAckMode(String ackMode) {
+    static int getJmsAckMode(String ackMode) {
         return switch (ackMode) {
             case SESSION_TRANSACTED_MODE -> Session.SESSION_TRANSACTED;
             case AUTO_ACKNOWLEDGE_MODE -> Session.AUTO_ACKNOWLEDGE;

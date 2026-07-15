@@ -29,17 +29,17 @@ import io.ballerina.runtime.api.values.BString;
  * @param accessToken OAuth 2.0 access token for authentication, or {@code null}
  * @param oidcToken   OpenID Connect (OIDC) ID token for authentication, or {@code null}
  */
-public record OAuth2Config(String issuer, String accessToken, String oidcToken) implements AuthConfig {
+public record OAuth2Configuration(String issuer, String accessToken, String oidcToken) implements AuthConfiguration {
     private static final BString ISSUER = StringUtils.fromString("issuer");
     private static final BString ACCESS_TOKEN = StringUtils.fromString("accessToken");
     private static final BString OIDC_TOKEN = StringUtils.fromString("oidcToken");
 
     /**
-     * Creates an OAuth2Config from Ballerina configuration map.
+     * Creates an OAuth2Configuration from Ballerina configuration map.
      *
      * @param config Ballerina configuration map
      */
-    public OAuth2Config(BMap<BString, Object> config) {
+    public OAuth2Configuration(BMap<BString, Object> config) {
         this(
                 config.getStringValue(ISSUER).getValue(),
                 config.containsKey(ACCESS_TOKEN) ? config.getStringValue(ACCESS_TOKEN).getValue() : null,

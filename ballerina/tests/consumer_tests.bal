@@ -50,6 +50,45 @@ isolated function testConsumerInitWithTopic() returns error? {
 }
 
 @test:Config {groups: ["consumer"]}
+isolated function testConsumerInitWithTemporaryQueueNoName() returns error? {
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            durability: TEMPORARY
+        }
+    });
+
+    string destinationName = consumer->destinationName();
+    test:assertTrue(destinationName.length() > 0, "A TEMPORARY queue should resolve to a provider-generated name");
+
+    check consumer->close();
+}
+
+@test:Config {groups: ["consumer"]}
+isolated function testConsumerDestinationNameForTopic() returns error? {
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            topicName: TEST_TOPIC
+        }
+    });
+
+    string destinationName = consumer->destinationName();
+    test:assertEquals(destinationName, TEST_TOPIC, "destinationName() should return the topic name");
+
+    check consumer->close();
+}
+
+@test:Config {groups: ["consumer"]}
 isolated function testReceiveWithQueue() returns error? {
     MessageProducer producer = check new (BROKER_URL, {
         messageVpn: MESSAGE_VPN,
@@ -330,7 +369,9 @@ isolated function testReceiveMessageWithProperties() returns error? {
         properties: {
             "priority": "high",
             "timestamp": 123456789,
-            "enabled": true
+            "enabled": true,
+            "retryCount": <byte>3,
+            "score": <float>4.5
         }
     };
     check producer->send(message);
@@ -357,6 +398,8 @@ isolated function testReceiveMessageWithProperties() returns error? {
             test:assertEquals(receivedMessage.properties["priority"], "high");
             test:assertEquals(receivedMessage.properties["timestamp"], 123456789);
             test:assertEquals(receivedMessage.properties["enabled"], true);
+            test:assertEquals(receivedMessage.properties["retryCount"], <byte>3);
+            test:assertEquals(receivedMessage.properties["score"], <float>4.5);
         }
     }
     check consumer->close();
@@ -402,6 +445,45 @@ isolated function testReceiveMessageWithCorrelationId() returns error? {
 }
 
 @test:Config {groups: ["consumer"], dependsOn: [testReceiveMessageWithCorrelationId]}
+isolated function testReceiveMessageWithSenderId() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        destination: {queueName: CONSUMER_SENDER_ID_QUEUE}
+    });
+
+    Message message = {
+        payload: "Message with sender ID",
+        senderId: "test-sender-789"
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_SENDER_ID_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive message with sender ID");
+    if receivedMessage is Message {
+        test:assertEquals(receivedMessage.senderId, "test-sender-789");
+    }
+    check consumer->close();
+}
+
+@test:Config {groups: ["consumer"], dependsOn: [testReceiveMessageWithSenderId]}
 isolated function testReceiveTimeout() returns error? {
     MessageConsumer consumer = check new (BROKER_URL, {
         messageVpn: MESSAGE_VPN,
@@ -509,4 +591,291 @@ isolated function testReceiveXmlMessage() returns error? {
         }
     }
     check consumer->close();
+}
+
+@test:Config {groups: ["consumer", "config"]}
+isolated function testConsumerWithFlowControlSettings() returns error? {
+    MessageProducer producer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        destination: {queueName: CONSUMER_FLOW_CONTROL_QUEUE}
+    });
+
+    Message message = {
+        payload: TEXT_MESSAGE_CONTENT
+    };
+    check producer->send(message);
+    check producer->close();
+
+    MessageConsumer consumer = check new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        directTransport: false,
+        transportWindowSize: 50,
+        ackThreshold: 50,
+        ackTimer: 0.5,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+
+    Message? receivedMessage = check consumer->receive(5.0);
+    test:assertTrue(receivedMessage is Message, "Should receive a message with flow control settings applied");
+    check consumer->close();
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationDurableQueueMissingName() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            durability: DURABLE
+        }
+    });
+    test:assertTrue(consumer is Error, "A DURABLE queue with no queueName should fail validation");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("queuename is required"),
+                "Error message should mention the missing queueName requirement");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationDurableTopicMissingSubscriberName() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            topicName: TEST_TOPIC,
+            durability: DURABLE
+        }
+    });
+    test:assertTrue(consumer is Error, "A DURABLE topic with no subscriberName should fail validation");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("subscribername is required"),
+                "Error message should mention the missing subscriberName requirement");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationTemporaryQueueWithName() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_INIT_QUEUE,
+            durability: TEMPORARY
+        }
+    });
+    test:assertTrue(consumer is Error, "A TEMPORARY queue with a queueName should fail validation");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("queuename cannot be specified"),
+                "Error message should mention that TEMPORARY queues cannot specify queueName");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationWithInvalidTransportWindowSize() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        directTransport: false,
+        transportWindowSize: 300,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error, "Expected validation error for transportWindowSize > 255");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("transportwindowsize"),
+                "Error message should mention transportWindowSize");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationWithInvalidAckThreshold() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        directTransport: false,
+        ackThreshold: 90,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error, "Expected validation error for ackThreshold > 75");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("ackthreshold"),
+                "Error message should mention ackThreshold");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationWithAckThresholdZero() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        directTransport: false,
+        ackThreshold: 0,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error, "Expected validation error for ackThreshold of 0");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("ackthreshold"),
+                "Error message should mention ackThreshold");
+    }
+}
+
+@test:Config {groups: ["consumer", "config"]}
+isolated function testConsumerWithAckThresholdLowerBound() returns error? {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        directTransport: false,
+        ackThreshold: 1,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertFalse(consumer is Error, "ackThreshold of 1 should pass validation");
+    if consumer is MessageConsumer {
+        check consumer->close();
+    }
+}
+
+@test:Config {groups: ["consumer", "config"]}
+isolated function testConsumerWithAckThresholdUpperBound() returns error? {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        enableDynamicDurables: true,
+        directTransport: false,
+        ackThreshold: 75,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertFalse(consumer is Error, "ackThreshold of 75 should pass validation");
+    if consumer is MessageConsumer {
+        check consumer->close();
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationWithInvalidAckTimer() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        directTransport: false,
+        ackTimer: 2.0,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error, "Expected validation error for ackTimer > 1.5 seconds");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("acktimer"),
+                "Error message should mention ackTimer");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationFlowControlRequiresGuaranteedDelivery() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        transportWindowSize: 50,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error,
+            "Expected validation error when flow control settings are used with directTransport left at default true");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationAckTimerRequiresGuaranteedDelivery() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        ackTimer: 0.5,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE
+        }
+    });
+    test:assertTrue(consumer is Error,
+            "Expected validation error when ackTimer is used with directTransport left at default true");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
+}
+
+@test:Config {groups: ["consumer", "validation"]}
+isolated function testConsumerValidationTransactedRequiresGuaranteedDelivery() {
+    MessageConsumer|Error consumer = new (BROKER_URL, {
+        messageVpn: MESSAGE_VPN,
+        auth: {
+            username: BROKER_USERNAME,
+            password: BROKER_PASSWORD
+        },
+        subscriptionConfig: {
+            queueName: CONSUMER_FLOW_CONTROL_QUEUE,
+            ackMode: SESSION_TRANSACTED
+        }
+    });
+    test:assertTrue(consumer is Error,
+            "Expected validation error when ackMode is SESSION_TRANSACTED with directTransport left at default true");
+    if consumer is Error {
+        test:assertTrue(consumer.message().toLowerAscii().includes("directtransport"),
+                "Error message should mention directTransport");
+    }
 }

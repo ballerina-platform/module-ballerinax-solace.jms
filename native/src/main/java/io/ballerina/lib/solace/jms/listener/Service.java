@@ -111,14 +111,14 @@ public class Service {
     private static void validateOnMessageMethod(Runtime runtime, RemoteMethodType onMessageMethod) {
         Parameter[] parameters = onMessageMethod.getParameters();
         if (parameters.length < 1 || parameters.length > 2) {
-            throw CommonUtils.createError("onMessage method can have only have either one or two parameters.");
+            throw CommonUtils.createError("onMessage method can only have either one or two parameters.");
         }
 
-        Parameter message = null;
+        int messageCount = 0;
         for (Parameter parameter : parameters) {
             Type parameterType = TypeUtils.getReferredType(parameter.type);
             if (inSubtypeOfSolaceMessage(runtime, parameterType)) {
-                message = parameter;
+                messageCount++;
                 continue;
             }
             if (TypeUtils.isSameType(CALLER_TYPE, parameterType)) {
@@ -129,8 +129,12 @@ public class Service {
                             "(or its subtype) or 'solace.jms:Caller'.");
         }
 
-        if (Objects.isNull(message)) {
+        if (messageCount == 0) {
             throw CommonUtils.createError("Required parameter 'solace.jms:Message' can not be found.");
+        }
+        if (messageCount > 1) {
+            throw CommonUtils.createError(
+                    "onMessage method must not declare more than one 'solace.jms:Message' parameter.");
         }
     }
 

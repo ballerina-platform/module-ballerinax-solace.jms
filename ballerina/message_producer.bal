@@ -26,6 +26,8 @@ public isolated client class MessageProducer {
     #     transacted: false
     # });
     # ```
+    # `destination` is optional here and can instead be supplied (or overridden) per call via
+    # `send()`'s `destination` parameter - see `send` below.
     #
     # + url - The Solace broker URL in the format `<scheme>://[username]:[password]@<host>[:port]`.
     # Supported schemes are `smf` (plain-text) and `smfs` (TLS/SSL).
@@ -34,7 +36,7 @@ public isolated client class MessageProducer {
     # + config - Producer configuration including connection settings and destination
     # + return - A `jms:Error` if initialization fails or else `()`
     public isolated function init(string url, *ProducerConfiguration config) returns Error? {
-        Error? validated = validateConfigurations(config);
+        Error? validated = validateProducerConfigurations(config);
         if validated is Error {
             return error Error(
                 string `Error occurred while validating the producer configurations: ${validated.message()}`, validated);
@@ -50,31 +52,45 @@ public isolated client class MessageProducer {
     # Sends a message to the Solace broker.
     # ```ballerina
     # check producer->send(message);
+    # check producer->send(message, {queueName: "orders"});
     # ```
     #
+    # If `destination` is given here, it takes precedence over the producer's configured default
+    # destination (`ProducerConfiguration.destination`) for this call only. If neither is
+    # available - no `destination` argument and no configured default - this returns an `Error`.
+    #
     # + message - Message to be sent to the Solace broker
+    # + destination - The destination (Topic or Queue) to send to for this call, overriding the
+    # producer's configured default destination, if any
     # + return - A `jms:Error` if there is an error or else `()`
-    isolated remote function send(Message message) returns Error? {
+    isolated remote function send(Message message, Destination? destination = ()) returns Error? {
+        Error? validated = validateMessage(message);
+        if validated is Error {
+            return validated;
+        }
         string|map<Value>|byte[] payload = convertPayload(message.payload);
         map<Property> properties = prepareProperties(message);
         InternalMessage iMessage = {
             payload,
             correlationId: message.correlationId,
             replyTo: message.replyTo,
+            senderId: message.senderId,
             properties,
             messageId: message.messageId,
             timestamp: message.timestamp,
             destination: message.destination,
             deliveryMode: message.deliveryMode,
             redelivered: message.redelivered,
-            jmsType: message.jmsType,
+            messageType: message.messageType,
+            deliveryCount: message.deliveryCount,
             expiration: message.expiration,
-            priority: message.priority
+            priority: message.priority,
+            timeToLive: message.timeToLive
         };
-        return self.externSend(iMessage);
+        return self.externSend(iMessage, destination);
     }
 
-    isolated function externSend(InternalMessage message) returns Error? = @java:Method {
+    isolated function externSend(InternalMessage message, Destination? destination) returns Error? = @java:Method {
         name: "send",
         'class: "io.ballerina.lib.solace.jms.producer.Actions"
     } external;
@@ -87,7 +103,6 @@ public isolated client class MessageProducer {
     #
     # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'commit() returns Error? = @java:Method {
-        name: "commit",
         'class: "io.ballerina.lib.solace.jms.producer.Actions"
     } external;
 
@@ -99,7 +114,6 @@ public isolated client class MessageProducer {
     #
     # + return - A `jms:Error` if there is an error or else `()`
     isolated remote function 'rollback() returns Error? = @java:Method {
-        name: "rollback",
         'class: "io.ballerina.lib.solace.jms.producer.Actions"
     } external;
 

@@ -62,18 +62,13 @@ type CommonConnectionConfiguration record {
     string messageVpn = "default";
     # The authentication configuration. Supports basic authentication, Kerberos, and OAuth2.
     # For client certificate authentication, configure the `secureSocket.keyStore` field
-    BasicAuthConfig|KerberosConfig|OAuth2Config auth?;
+    AuthConfiguration auth?;
     # The SSL/TLS configuration for secure connections
     SecureSocket secureSocket?;
-    # Enables transacted messaging when set to `true`. In transacted mode, messages are sent and received
-    # within a transaction context, requiring explicit commit or rollback
-    boolean transacted = false;
-    # The client identifier. If not specified, a unique client ID is auto-generated
-    string clientId?;
+    # A unique client name to use to register to the appliance. If not specified, a unique client ID is auto-generated
+    string clientName?;
     # A description for the application client
-    string clientDescription = "JNDI";
-    # Specifies whether to allow the same client ID to be used across multiple connections
-    boolean allowDuplicateClientId = false;
+    string clientDescription = "Ballerina Solace JMS Connector";
     # Enables automatic creation of durable queues and topic endpoints on the broker
     boolean enableDynamicDurables = false;
     # Enables direct transport mode for message delivery. When `true`, uses direct (at-most-once) delivery.
@@ -94,13 +89,19 @@ type CommonConnectionConfiguration record {
     # Valid range is 0-9, where 0 means no compression. Higher values provide better compression at the slower throughput
     int compressionLevel = 0;
     # The retry configuration for connection and reconnection attempts
-    RetryConfig retryConfig?;
+    RetryConfiguration retryConfig?;
 };
 ```
 
-- `BasicAuthConfig` record represents the basic authentication credentials for connecting to a Solace broker.
+- `AuthConfiguration` represents the authentication configuration for connecting to a Solace broker.
+It is a union of `BasicAuthConfiguration`, `KerberosConfiguration`, and `OAuth2Configuration`.
 ```ballerina
-public type BasicAuthConfig record {|
+public type AuthConfiguration BasicAuthConfiguration|KerberosConfiguration|OAuth2Configuration;
+```
+
+- `BasicAuthConfiguration` record represents the basic authentication credentials for connecting to a Solace broker.
+```ballerina
+public type BasicAuthConfiguration record {|
     # The username for authentication
     string username;
     # The password for authentication
@@ -108,30 +109,40 @@ public type BasicAuthConfig record {|
 |};
 ```
 
-- `KerberosConfig` record represents the Kerberos (GSS-KRB) authentication configuration for connecting to a Solace broker. 
+- `KerberosConfiguration` record represents the Kerberos (GSS-KRB) authentication configuration for connecting to a Solace broker. 
 ```ballerina
-public type KerberosConfig record {|
+public type KerberosConfiguration record {|
     # The Kerberos service name used during authentication
     string serviceName = "solace";
     # The JAAS login context name to use for authentication
     string jaasLoginContext = "SolaceGSS";
     # Specifies whether to enable Kerberos mutual authentication
-    boolean mutualAuthentication = true;
+    boolean mutualAuthentication = false;
     # Specifies whether to enable automatic reload of the JAAS configuration file
-    boolean jaasConfigReloadEnabled = false;
+    boolean jaasConfigFileReloadEnabled = false;
 |};
 ```
 
-- `OAuth2Config` record represents the OAuth 2.0 authentication configuration for connecting to a Solace broker. 
+- `OAuth2Configuration` represents the OAuth 2.0 authentication configuration for connecting to a Solace
+broker. It is a union of `OAuth2AccessTokenAuth` and `OidcIdTokenAuth` - exactly one of them must
+be provided, and which one is used determines whether an OAuth 2.0 access token or an OIDC ID
+token is presented to the broker.
 ```ballerina
-public type OAuth2Config record {|
+public type OAuth2AccessTokenAuth record {|
     # The OAuth 2.0 issuer identifier URI
     string issuer;
     # The OAuth 2.0 access token for authentication
-    string accessToken?;
-    # The OpenID Connect (OIDC) ID token for authentication
-    string oidcToken?;
+    string accessToken;
 |};
+
+public type OidcIdTokenAuth record {|
+    # The OAuth 2.0 issuer identifier URI
+    string issuer;
+    # The OpenID Connect (OIDC) ID token for authentication
+    string oidcToken;
+|};
+
+public type OAuth2Configuration OAuth2AccessTokenAuth|OidcIdTokenAuth;
 ```
 
 - `SecureSocket` record represents the SSL/TLS configuration for secure connections to a Solace broker.
@@ -142,9 +153,8 @@ public type SecureSocket record {|
     # The key store configuration containing the client's private key and certificate.
     # When configured, enables client certificate authentication
     KeyStore keyStore?;
-    # The list of SSL/TLS protocol versions to enable for the connection.
-    # It is recommended to use only TLSv12 or higher for security
-    Protocol[] protocols = [SSLv30, TLSv10, TLSv11, TLSv12];
+    # The SSL/TLS protocols NOT to use
+    Protocol[] excludedProtocols = [SSLv2Hello];
     # The list of cipher suites to enable for the connection.
     # If not specified, the default cipher suites for the JVM are used
     SslCipherSuite[] cipherSuites?;
@@ -152,14 +162,19 @@ public type SecureSocket record {|
     # If specified, the broker certificate's common name must match one of these values
     string[] trustedCommonNames?;
     # The certificate validation settings
-    record {|
-        # Enable certificate validation
-        boolean enabled = true;
-        # Specifies whether to validate the certificate's expiration date
-        boolean validateDate = true;
-        # Specifies whether to validate that the certificate's common name matches the broker hostname
-        boolean validateHost = true;
-    |} validation = {};
+    CertificateValidation validation = {};
+|};
+```
+
+- `CertificateValidation` record represents the certificate validation settings for SSL/TLS connections to a Solace broker.
+```ballerina
+public type CertificateValidation record {|
+    # Enable certificate validation
+    boolean enabled = true;
+    # Specifies whether to validate the certificate's expiration date
+    boolean validateDate = true;
+    # Specifies whether to validate that the certificate's common name matches the broker hostname
+    boolean validateHostname = true;
 |};
 ```
 
@@ -205,9 +220,9 @@ public type SslCipherSuite ECDHE_RSA_AES256_CBC_SHA384|ECDHE_RSA_AES256_CBC_SHA|
     RSA_AES128_CBC_SHA;
 ```
 
-- `RetryConfig` record represents the retry configuration for connection and reconnection attempts to a Solace broker. 
+- `RetryConfiguration` record represents the retry configuration for connection and reconnection attempts to a Solace broker. 
 ```ballerina
-public type RetryConfig record {|
+public type RetryConfiguration record {|
     # The number of times to retry connecting to the broker during initial connection.
     # A value of -1 means retry forever, 0 means no retries (fail immediately on first failure)
     int connectRetries = 0;
@@ -216,17 +231,17 @@ public type RetryConfig record {|
     int connectRetriesPerHost = 0;
     # The number of times to retry reconnecting after an established connection is lost.
     # A value of -1 means retry forever
-    int reconnectRetries = 20;
+    int reconnectRetries = 3;
     # The time to wait between reconnection attempts, in seconds
     decimal reconnectRetryWait = 3.0;
 |};
 ```
 
-- `CommonSubscriptionConfig` record represents the common configurations related to the Solace queue or topic subscription.
+- `CommonConsumerConfiguration` record represents the common configurations related to the Solace queue or topic subscription.
 ```ballerina
-type CommonSubscriptionConfig record {|
+public type CommonConsumerConfiguration record {|
     # Configuration indicating how messages received by the session will be acknowledged
-    AcknowledgementMode sessionAckMode = AUTO_ACKNOWLEDGE;
+    AcknowledgementMode ackMode = AUTO_ACKNOWLEDGE;
     # Only messages with properties matching the message selector expression are delivered. 
     # If this value is not set that indicates that there is no message selector for the message consumer
     # For example, to only receive messages with a property `priority` set to `'high'`, use:
@@ -240,30 +255,30 @@ type CommonSubscriptionConfig record {|
 public enum AcknowledgementMode {
     # Indicates that the session will use a local transaction which may subsequently 
     # be committed or rolled back by calling the session's `commit` or `rollback` methods. 
-    SESSION_TRANSACTED = "SESSION_TRANSACTED",
+    SESSION_TRANSACTED,
     # Indicates that the session automatically acknowledges a client's receipt of a message 
     # either when the session has successfully returned from a call to `receive` or when 
     # the message listener the session has called to process the message successfully returns.
-    AUTO_ACKNOWLEDGE = "AUTO_ACKNOWLEDGE",
+    AUTO_ACKNOWLEDGE,
     # Indicates that the client acknowledges a consumed message by calling the 
     # MessageConsumer's or Caller's `ack` method. Acknowledging a consumed message 
     # acknowledges all messages that the session has consumed.
-    CLIENT_ACKNOWLEDGE = "CLIENT_ACKNOWLEDGE",
+    CLIENT_ACKNOWLEDGE,
     # Indicates that the session to lazily acknowledge the delivery of messages. 
     # This is likely to result in the delivery of some duplicate messages if the JMS provider fails, 
     # so it should only be used by consumers that can tolerate duplicate messages. 
     # Use of this mode can reduce session overhead by minimizing the work the session does to prevent duplicates.
-    DUPS_OK_ACKNOWLEDGE = "DUPS_OK_ACKNOWLEDGE"
+    DUPS_OK_ACKNOWLEDGE
 }
 ```
 
-- `ConsumerType` enum defines the supported JMS message consumer types. 
+- `Durability` enum defines the durability of a queue or topic subscription. 
 ```ballerina
-public enum ConsumerType {
+public enum Durability {
     # Represents JMS durable subscriber
-    DURABLE = "DURABLE",
-    # Represents JMS default consumer
-    DEFAULT = "DEFAULT"
+    DURABLE,
+    # Represents JMS default (non-durable) consumer
+    TEMPORARY
 }
 ```
 
@@ -276,10 +291,21 @@ An Solace message is a fundamental unit of data that facilitates communication b
 public type Message record {|
     # Message payload
     anydata payload;
+    # Delivery mode for the message (`NON_PERSISTENT` or `PERSISTENT`)
+    DeliveryMode deliveryMode = PERSISTENT;
+    # Priority level for the message (0-9, where 9 is the highest)
+    int priority?;
+    # Time in seconds before this message expires and is discarded (or moved to a Dead Message
+    # Queue, if eligible) by the broker. `0` or unset means the message never expires (default)
+    decimal timeToLive?;
+    # Message type identifier supplied by the client when the message was sent
+    string messageType?;
     # Id which can be used to correlate multiple messages
     string correlationId?;
     # JMS destination to which a reply to this message should be sent
     Destination replyTo?;
+    # Sender ID, a Solace-specific extension with no standard JMS equivalent
+    string senderId?;
     # Additional message properties
     map<Property> properties?;
     # Unique identifier for a JMS message (Only set by the JMS provider)
@@ -288,16 +314,12 @@ public type Message record {|
     int timestamp?;
     # JMS destination of this message (Only set by the JMS provider)
     Destination destination?;
-    # Delivery mode of this message (Only set by the JMS provider)
-    int deliveryMode?;
     # Indication of whether this message is being redelivered (Only set by the JMS provider)
     boolean redelivered?;
-    # Message type identifier supplied by the client when the message was sent
-    string jmsType?;
+    # Number of times this message has been delivered (Only set by the JMS provider)
+    int deliveryCount?;
     # Message expiration time (Only set by the JMS provider)
     int expiration?;
-    # Message priority level (Only set by the JMS provider)
-    int priority?;
 |};
 ```
 
@@ -334,8 +356,12 @@ The `jms:MessageProducer` is used to send messages to a Solace destination.
 ```ballerina
 public type ProducerConfiguration record {|
     *jms:CommonConnectionConfiguration;
-    # The destination (Topic or Queue) where messages will be published
-    Destination destination;
+    # Enables transacted messaging when set to `true`. In transacted mode, messages are sent
+    # within a transaction context, requiring explicit commit or rollback
+    boolean transacted = false;
+    # The default destination (Topic or Queue) where messages will be published. Optional - can be
+    # omitted and/or overridden per call via the `destination` parameter of `send()`
+    Destination destination?;
 |};
 ```
 
@@ -362,16 +388,22 @@ public isolated function init(string url, *ProducerConfiguration config) returns
 
 ### 4.3. Functions
 
-- To send a message to a destination in the Solace event broker, use `send` function.
+- To send a message to a destination in the Solace event broker, use `send` function. The
+`destination` parameter is optional and, when given, takes precedence over the producer's
+configured default destination for that call only. If neither a configured default nor a
+per-call `destination` is available, `send` returns an `Error`.
 ```ballerina
 # Sends a message to the Solace broker.
 # ```
 # check producer->send(message);
+# check producer->send(message, {queueName: "orders"});
 # ```
 #
 # + message - Message to be sent to the Solace broker
+# + destination - The destination (Topic or Queue) to send to for this call, overriding the
+# producer's configured default destination, if any
 # + return - A `jms:Error` if there is an error or else `()`
-isolated remote function send(Message message) returns Error?;
+isolated remote function send(Message message, Destination? destination = ()) returns Error?;
 ```
 
 - To commit all messages sent in this transaction and releases any locks currently held, use the `commit` function.
@@ -419,32 +451,37 @@ The `jms:MessageConsumer` is used to receive messages from a Solace destination.
 public type ConsumerConfiguration record {|
     *CommonConnectionConfiguration;
     # The subscription configuration specifying either a queue or topic to consume messages from
-    QueueConfig|TopicConfig subscriptionConfig;
+    SubscriptionConfiguration subscriptionConfig;
 |};
 ```
 
-- `QueueConfig` record represents configurations for a Solace queue subscription.
+- `SubscriptionConfiguration` represents the subscription configuration, either a queue or a topic.
 ```ballerina
-public type QueueConfig record {|
-    *CommonSubscriptionConfig;
-    # The name of the queue to consume messages from
-    string queueName;
+public type SubscriptionConfiguration QueueConfiguration|TopicConfiguration;
+```
+
+- `QueueConfiguration` record represents configurations for a Solace queue subscription.
+```ballerina
+public type QueueConfiguration record {|
+    *CommonConsumerConfiguration;
+    # The name of the queue to consume messages from - required unless durability is TEMPORARY. Cannot be
+    # specified when durability is TEMPORARY (JMS temporary queues are always provider-named)
+    string queueName?;
+    # DURABLE (pre-provisioned, named queue) or TEMPORARY (auto-deleted when session disconnects)
+    Durability durability = DURABLE;
 |};
 ```
 
-- `TopicConfig` record represents configurations for Solace topic subscription.
+- `TopicConfiguration` record represents configurations for Solace topic subscription.
 ```ballerina
-public type TopicConfig record {|
-    *CommonSubscriptionConfig;
+public type TopicConfiguration record {|
+    *CommonConsumerConfiguration;
     # The name of the topic to subscribe to
     string topicName;
-    # The message consumer type
-    ConsumerType consumerType = DEFAULT;
+    # The message consumer durability
+    Durability durability = TEMPORARY;
     # The name used to identify the subscription
     string subscriberName?;
-    # If true then any messages published to the topic using this session's connection, or any other connection
-    # with the same client identifier, will not be added to the durable subscription.
-    boolean noLocal = false;
 |};
 ```
 
@@ -477,10 +514,11 @@ public isolated function init(string url, *ConsumerConfiguration config) returns
 # jms:Message? message = check consumer->receive(5.0);
 # ```
 #
-# + timeout - The maximum time to wait for a message in seconds. Default is 10.0 seconds
+# + timeout - The maximum time to wait for a message in seconds. A nil or zero timeout blocks
+# indefinitely, matching the underlying JMS default
 # + T - Optional type description of the expected data type
 # + return - The received `Message`, `()` if no message is available within the timeout, or a `jms:Error` if there is an error
-isolated remote function receive(decimal timeout = 10.0, typedesc<Message> T = <>) returns T|Error?;
+isolated remote function receive(decimal? timeout = (), typedesc<Message> T = <>) returns T|Error?;
 ```
 
 - To receives the next message from the Solace broker if one is immediately available, use the `receiveNoWait` function.
@@ -498,7 +536,7 @@ isolated remote function receiveNoWait(typedesc<Message> T = <>) returns T|Error
 - To acknowledges the specified message, use the `ack` function.
 ```ballerina
 # Acknowledges the specified message. This method should only be called when the consumer is configured
-# with `sessionAckMode: CLIENT_ACKNOWLEDGE`.
+# with `ackMode: CLIENT_ACKNOWLEDGE`.
 # ```
 # check consumer->ack(message);
 # ```
@@ -511,7 +549,7 @@ isolated remote function ack(Message message) returns Error?;
 - To commit all messages received in this transaction and releases any locks currently held, use the `commit` function.
 ```ballerina
 # Commits all messages received in this transaction and releases any locks currently held.
-# This method should only be called when the consumer is configured with `sessionAckMode: SESSION_TRANSACTED`.
+# This method should only be called when the consumer is configured with `ackMode: SESSION_TRANSACTED`.
 # ```
 # check consumer->'commit();
 # ```
@@ -523,7 +561,7 @@ isolated remote function 'commit() returns Error?
 - To roll back any messages received in this transaction and releases any locks currently held, use the `rollback` function.
 ```ballerina
 # Rolls back any messages received in this transaction and releases any locks currently held.
-# This method should only be called when the consumer is configured with `sessionAckMode: SESSION_TRANSACTED`.
+# This method should only be called when the consumer is configured with `ackMode: SESSION_TRANSACTED`.
 # ```
 # check consumer->'rollback();
 # ```
@@ -654,31 +692,28 @@ public annotation ServiceConfiguration ServiceConfig on service;
 
 - `ServiceConfiguration` type defines the service configuration types for a Solace service.
 ```ballerina
-public type ServiceConfiguration QueueServiceConfig|TopicServiceConfig;
+public type ServiceConfiguration QueueServiceConfiguration|TopicServiceConfiguration;
 ```
 
-- `QueueServiceConfig` record represents configurations for a service configurations related to solace queue subscription.
+- `QueueServiceConfiguration` record represents configurations for a service configurations related to solace queue subscription.
 ```ballerina
-public type QueueServiceConfig record {|
-    *CommonServiceConfig;
+public type QueueServiceConfiguration record {|
+    *CommonConsumerConfiguration;
     # The name of the queue to consume messages from
     string queueName;
 |};
 ```
 
-- `TopicServiceConfig` record represents configurations for a service configurations related to solace topic subscription.
+- `TopicServiceConfiguration` record represents configurations for a service configurations related to solace topic subscription.
 ```ballerina
-public type TopicServiceConfig record {|
-    *CommonServiceConfig;
+public type TopicServiceConfiguration record {|
+    *CommonConsumerConfiguration;
     # The name of the topic to subscribe to
     string topicName;
-    # The message consumer type
-    ConsumerType consumerType = DEFAULT;
+    # The message consumer durability
+    Durability durability = TEMPORARY;
     # The name used to identify the subscription
     string subscriberName?;
-    # If true then any messages published to the topic using this session's connection, or any other connection
-    # with the same client identifier, will not be added to the durable subscription.
-    boolean noLocal = false;
 |};
 ```
 

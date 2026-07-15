@@ -26,10 +26,10 @@ isolated function validateConfigurations(CommonConnectionConfiguration config) r
 
     // Validate auth configurations
     var authConfig = config.auth;
-    if authConfig is BasicAuthConfig {
+    if authConfig is BasicAuthConfiguration {
         string username = authConfig.username;
-        if username.length() > 32 {
-            return error Error("Username cannot exceed 32 characters");
+        if username.length() > 189 {
+            return error Error("Username cannot exceed 189 characters");
         }
 
         string? password = authConfig.password;
@@ -46,5 +46,69 @@ isolated function validateConfigurations(CommonConnectionConfiguration config) r
             return error Error("Trusted common names list cannot exceed 16 entries");
         }
     }
+
 }
 
+isolated function validateConsumerConnectionConfigurations(CommonConsumerConnectionConfiguration config) returns Error? {
+    check validateConfigurations(config);
+
+    int? transportWindowSize = config.transportWindowSize;
+    if transportWindowSize is int && (transportWindowSize < 1 || transportWindowSize > 255) {
+        return error Error("transportWindowSize must be between 1 and 255");
+    }
+    int ackThreshold = config.ackThreshold;
+    if ackThreshold < 1 || ackThreshold > 75 {
+        return error Error("ackThreshold must be between 1 and 75");
+    }
+    decimal? ackTimer = config.ackTimer;
+    if ackTimer is decimal && (ackTimer < 0.02d || ackTimer > 1.5d) {
+        return error Error("ackTimer must be between 0.02 and 1.5 seconds");
+    }
+    if config.directTransport && (transportWindowSize is int || ackTimer is decimal) {
+        return error Error(
+                "directTransport must be false when receive flow-control settings are configured: " +
+                "Solace receive flow-control settings require guaranteed delivery");
+    }
+}
+
+isolated function validateProducerConfigurations(ProducerConfiguration config) returns Error? {
+    check validateConfigurations(config);
+
+    if config.transacted && config.directTransport {
+        return error Error(
+                "directTransport must be false when transacted is true: " +
+                "Solace does not support transacted sessions over direct transport");
+    }
+}
+
+isolated function validateConsumerConfigurations(ConsumerConfiguration config) returns Error? {
+    check validateConsumerConnectionConfigurations(config);
+
+    if config.subscriptionConfig.ackMode == SESSION_TRANSACTED && config.directTransport {
+        return error Error(
+                "directTransport must be false when ackMode is SESSION_TRANSACTED: " +
+                "Solace does not support transacted sessions over direct transport");
+    }
+    SubscriptionConfiguration subscriptionConfig = config.subscriptionConfig;
+    if subscriptionConfig is QueueConfiguration {
+        string? queueName = subscriptionConfig.queueName;
+        if subscriptionConfig.durability != TEMPORARY && (queueName !is string || queueName == "") {
+            return error Error("queueName is required when durability is not TEMPORARY");
+        }
+        if subscriptionConfig.durability == TEMPORARY && queueName is string && queueName != "" {
+            return error Error("queueName cannot be specified when durability is TEMPORARY");
+        }
+    } else if subscriptionConfig.durability == DURABLE {
+        string? subscriberName = subscriptionConfig.subscriberName;
+        if subscriberName !is string || subscriberName == "" {
+            return error Error("subscriberName is required when durability is DURABLE");
+        }
+    }
+}
+
+isolated function validateMessage(Message message) returns Error? {
+    int? priority = message.priority;
+    if priority is int && (priority < 0 || priority > 9) {
+        return error Error("priority must be between 0 and 9");
+    }
+}

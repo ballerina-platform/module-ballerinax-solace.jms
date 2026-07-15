@@ -46,7 +46,7 @@ isolated function testTransactedSessionWithCommit() returns error? {
         },
         subscriptionConfig: {
             queueName: TRANSACTED_COMMIT_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -70,7 +70,7 @@ isolated function testTransactedSessionWithCommit() returns error? {
         },
         subscriptionConfig: {
             queueName: TRANSACTED_COMMIT_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -108,7 +108,7 @@ isolated function testTransactedSessionWithRollback() returns error? {
         },
         subscriptionConfig: {
             queueName: TRANSACTED_ROLLBACK_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -134,7 +134,7 @@ isolated function testTransactedSessionWithRollback() returns error? {
         },
         subscriptionConfig: {
             queueName: TRANSACTED_ROLLBACK_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -176,7 +176,7 @@ isolated function testTransactedSessionMultipleMessagesCommit() returns error? {
         },
         subscriptionConfig: {
             queueName: TRANSACTED_MULTIPLE_COMMIT_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -212,7 +212,7 @@ isolated function testTransactedSessionMultipleMessagesCommit() returns error? {
         },
         subscriptionConfig: {
             queueName: TRANSACTED_MULTIPLE_COMMIT_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -249,7 +249,7 @@ isolated function testTransactedSessionMultipleMessagesRollback() returns error?
         },
         subscriptionConfig: {
             queueName: TRANSACTED_MULTIPLE_ROLLBACK_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -278,7 +278,7 @@ isolated function testTransactedSessionMultipleMessagesRollback() returns error?
         },
         subscriptionConfig: {
             queueName: TRANSACTED_MULTIPLE_ROLLBACK_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -317,7 +317,7 @@ isolated function testTransactedSessionWithTopic() returns error? {
         },
         subscriptionConfig: {
             topicName: TRANSACTED_TOPIC,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -379,7 +379,7 @@ isolated function testTransactedSessionMixedCommitRollback() returns error? {
         },
         subscriptionConfig: {
             queueName: TRANSACTED_MIXED_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -444,7 +444,7 @@ isolated function testTransactedSessionWithDifferentMessageTypes() returns error
         },
         subscriptionConfig: {
             queueName: TRANSACTED_MSG_TYPES_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 
@@ -502,7 +502,7 @@ isolated function testTransactedProducerAndConsumer() returns error? {
         },
         subscriptionConfig: {
             queueName: TRANSACTED_PRODUCER_CONSUMER_QUEUE,
-            sessionAckMode: SESSION_TRANSACTED
+            ackMode: SESSION_TRANSACTED
         }
     });
 

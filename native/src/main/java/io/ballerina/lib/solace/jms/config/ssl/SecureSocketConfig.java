@@ -31,7 +31,7 @@ import java.util.List;
  * @param validation          certificate validation settings
  * @param trustStore          trust store configuration containing trusted CA certificates, or {@code null}
  * @param keyStore            key store configuration containing client's private key and certificate, or {@code null}
- * @param protocols           unmodifiable list of SSL/TLS protocol versions to enable (e.g., TLSv1.2), or {@code null}
+ * @param excludedProtocols   unmodifiable list of SSL/TLS protocol versions to exclude, or {@code null}
  * @param cipherSuites        unmodifiable list of cipher suites to enable for connection, or {@code null}
  * @param trustedCommonNames  unmodifiable list of acceptable common names for broker certificate validation
  *                            (max 16 entries), or {@code null}
@@ -40,14 +40,14 @@ public record SecureSocketConfig(
         ValidationConfig validation,
         TrustStoreConfig trustStore,
         KeyStoreConfig keyStore,
-        List<String> protocols,
+        List<String> excludedProtocols,
         List<String> cipherSuites,
         List<String> trustedCommonNames) {
 
     private static final BString VALIDATION = StringUtils.fromString("validation");
     private static final BString TRUST_STORE = StringUtils.fromString("trustStore");
     private static final BString KEY_STORE = StringUtils.fromString("keyStore");
-    private static final BString PROTOCOLS = StringUtils.fromString("protocols");
+    private static final BString EXCLUDED_PROTOCOLS = StringUtils.fromString("excludedProtocols");
     private static final BString CIPHER_SUITES = StringUtils.fromString("cipherSuites");
     private static final BString TRUSTED_COMMON_NAMES = StringUtils.fromString("trustedCommonNames");
 
@@ -64,9 +64,9 @@ public record SecureSocketConfig(
                         new TrustStoreConfig((BMap<BString, Object>) config.getMapValue(TRUST_STORE)) : null,
                 config.containsKey(KEY_STORE) ?
                         new KeyStoreConfig((BMap<BString, Object>) config.getMapValue(KEY_STORE)) : null,
-                config.containsKey(PROTOCOLS) ?
+                config.containsKey(EXCLUDED_PROTOCOLS) ?
                         List.of(CommonUtils.mapProtocols(CommonUtils.convertToStringArray(
-                                config.getArrayValue(PROTOCOLS).getValues()))) : null,
+                                config.getArrayValue(EXCLUDED_PROTOCOLS).getValues()))) : null,
                 config.containsKey(CIPHER_SUITES) ?
                         List.of(CommonUtils.convertToStringArray(
                                 config.getArrayValue(CIPHER_SUITES).getValues())) : null,

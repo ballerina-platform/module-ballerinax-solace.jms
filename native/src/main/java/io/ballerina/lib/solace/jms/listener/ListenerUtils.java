@@ -19,7 +19,7 @@
 package io.ballerina.lib.solace.jms.listener;
 
 import io.ballerina.lib.solace.jms.CommonUtils;
-import io.ballerina.lib.solace.jms.consumer.ConsumerType;
+import io.ballerina.lib.solace.jms.consumer.Durability;
 
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -52,8 +52,7 @@ public final class ListenerUtils {
                     session,
                     topicConfig.topicName(),
                     topicConfig.messageSelector(),
-                    topicConfig.noLocal(),
-                    ConsumerType.valueOf(topicConfig.consumerType()),
+                    Durability.valueOf(topicConfig.durability()),
                     topicConfig.subscriberName()
             );
         };
