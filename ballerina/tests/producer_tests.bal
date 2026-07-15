@@ -432,15 +432,20 @@ isolated function testProducerValidationWithInvalidCompressionLevel() {
     groups: ["producer", "validation"]
 }
 isolated function testProducerValidationWithLongUsername() {
+    string tooLongUsername = "";
+    foreach int i in 0 ..< 190 {
+        tooLongUsername += "a";
+    }
+
     MessageProducer|Error producer = new (BROKER_URL, {
         destination: {queueName: TEST_QUEUE},
         messageVpn: MESSAGE_VPN,
         auth: {
-            username: "this-is-a-very-long-username-that-exceeds-the-maximum-allowed-length",
+            username: tooLongUsername,
             password: BROKER_PASSWORD
         }
     });
-    test:assertTrue(producer is Error, "Expected validation error for username > 32 chars");
+    test:assertTrue(producer is Error, "Expected validation error for username > 189 chars");
     if producer is Error {
         test:assertTrue(producer.message().toLowerAscii().includes("username"),
                 "Error message should mention username");

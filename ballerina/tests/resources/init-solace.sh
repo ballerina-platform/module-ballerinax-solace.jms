@@ -25,7 +25,8 @@ for i in $(seq 1 60); do
 done
 
 if [ "$vpn_up" != "true" ]; then
-    echo "WARNING: Message VPN did not report 'up' within the timeout; proceeding anyway."
+    echo "ERROR: Message VPN did not report 'up' within the timeout."
+    exit 1
 fi
 
 sleep 5
@@ -55,6 +56,11 @@ create_queue() {
         fi
         sleep 3
     done
+
+    if echo "$response" | grep -q '"error"'; then
+        echo "ERROR: Failed to create queue '$queue_name' after 5 attempts: $response"
+        exit 1
+    fi
 }
 
 # Note: Compression is enabled by default on the Solace broker on port 55003

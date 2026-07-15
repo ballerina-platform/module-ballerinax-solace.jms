@@ -60,6 +60,13 @@ isolated function testConsumerKerberosAuthIsRecognized() returns error? {
     });
 
     test:assertTrue(consumer is Error, "Init with Kerberos auth against a broker with no GSS-KRB profile should fail");
+    if consumer is Error {
+        string message = consumer.message();
+        test:assertTrue(message.includes("Kerberos") || message.includes("GSS"),
+                "Failure should prove Kerberos authentication was selected: " + message);
+        test:assertFalse(message.includes("username"),
+                "Failure must not indicate fallback to Basic authentication: " + message);
+    }
 }
 
 // ========================================

@@ -116,7 +116,7 @@ isolated function testSvcMethodWithAdditionalParameters() returns error? {
     if result is Error {
         test:assertEquals(
                 result.message(),
-                "Failed to attach service to listener: onMessage method can have only have either one or two parameters.",
+                "Failed to attach service to listener: onMessage method can only have either one or two parameters.",
                 "Invalid error message received");
     }
 }
@@ -139,6 +139,29 @@ isolated function testSvcMethodWithInvalidParams() returns error? {
         test:assertEquals(
                 result.message(),
                 "Failed to attach service to listener: onMessage method parameters must be of type 'solace.jms:Message' (or its subtype) or 'solace.jms:Caller'.",
+                "Invalid error message received");
+    }
+}
+
+@test:Config {
+    groups: ["service", "validations"]
+}
+isolated function testSvcMethodWithDuplicateMessageParam() returns error? {
+    Service svc = @ServiceConfig {
+        ackMode: CLIENT_ACKNOWLEDGE,
+        queueName: "test-svc-attach"
+    } service object {
+
+        remote function onMessage(Message message1, Message message2) returns error? {
+        }
+    };
+    Error? result = solaceListener.attach(svc);
+    test:assertTrue(result is Error);
+    if result is Error {
+        test:assertEquals(
+                result.message(),
+                "Failed to attach service to listener: onMessage method must not declare more than one "
+                        + "'solace.jms:Message' parameter.",
                 "Invalid error message received");
     }
 }
