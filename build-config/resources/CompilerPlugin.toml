@@ -1,0 +1,6 @@
+[plugin]
+id = "solace.jms-compiler-plugin"
+class = "io.ballerina.lib.solace.jms.compiler.SolaceJmsCompilerPlugin"
+
+[[dependency]]
+path = "../compiler-plugin/build/libs/solace.jms-compiler-plugin-@project.version@.jar"

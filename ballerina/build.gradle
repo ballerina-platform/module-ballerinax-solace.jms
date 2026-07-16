@@ -29,6 +29,8 @@ def packageOrg = "ballerinax"
 def tomlVersion = stripBallerinaExtensionVersion("${project.version}")
 def ballerinaTomlFilePlaceHolder = new File("${project.rootDir}/build-config/resources/Ballerina.toml")
 def ballerinaTomlFile = new File("$project.projectDir/Ballerina.toml")
+def compilerPluginTomlFilePlaceHolder = new File("${project.rootDir}/build-config/resources/CompilerPlugin.toml")
+def compilerPluginTomlFile = new File("$project.projectDir/CompilerPlugin.toml")
 
 def stripBallerinaExtensionVersion(String extVersion) {
     if (extVersion.matches(project.ext.timestampedVersionRegex)) {
@@ -47,8 +49,8 @@ def stripBallerinaExtensionVersion(String extVersion) {
 ballerina {
     packageOrganization = packageOrg
     module = packageName
+    langVersion = ballerinaLangVersion
     testCoverageParam = "--code-coverage --coverage-format=xml"
-    isConnector = true
     platform = "java21"
 }
 
@@ -138,6 +140,10 @@ task updateTomlFiles {
         newBallerinaToml = newBallerinaToml.replace('@netty.tcnative.boringssl.static.version@', project.nettyTcnativeBoringsslStaticVersion)
         newBallerinaToml = newBallerinaToml.replace('@solace.serdes.version@', project.solaceSerdesVersion)
         ballerinaTomlFile.text = newBallerinaToml
+
+        def newCompilerPluginToml = compilerPluginTomlFilePlaceHolder.text
+                .replace("@project.version@", project.version)
+        compilerPluginTomlFile.text = newCompilerPluginToml
     }
 }
 
@@ -206,11 +212,16 @@ clean {
     delete 'build'
 }
 
+build.dependsOn unpackJballerinaTools
 build.dependsOn copyToLib
 build.dependsOn ":${packageName}-native:build"
+build.dependsOn ":${packageName}-compiler-plugin:build"
 build.dependsOn generatePomFileForMavenPublication
 
 test.dependsOn ":${packageName}-native:build"
+test.dependsOn ":${packageName}-compiler-plugin:build"
+test.dependsOn unpackJballerinaTools
+test.dependsOn copyToLib
 test.dependsOn startSolaceServer
 test.finalizedBy stopSolaceServer
 

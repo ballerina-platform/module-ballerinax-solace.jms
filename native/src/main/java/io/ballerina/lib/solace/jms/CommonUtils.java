@@ -297,7 +297,7 @@ public final class CommonUtils {
             }
             case DURABLE -> {
                 if (subscriberName == null || subscriberName.isEmpty()) {
-                    throw new IllegalArgumentException("subscriberName is required when durability is DURABLE");
+                    throw new IllegalArgumentException("subscriberName is required when the topic is DURABLE");
                 }
                 if (messageSelector != null && !messageSelector.isEmpty()) {
                     yield session.createDurableSubscriber(topic, subscriberName, messageSelector, false);

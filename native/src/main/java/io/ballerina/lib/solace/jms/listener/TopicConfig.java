@@ -50,7 +50,7 @@ public record TopicConfig(String ackMode, String topicName, String messageSelect
 
     public TopicConfig {
         if (DURABLE.equalsIgnoreCase(durability) && (subscriberName == null || subscriberName.isEmpty())) {
-            throw new IllegalArgumentException("subscriberName is required when durability is DURABLE");
+            throw new IllegalArgumentException("subscriberName is required when the topic is DURABLE");
         }
     }
 
