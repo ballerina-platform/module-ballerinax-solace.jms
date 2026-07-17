@@ -86,13 +86,15 @@ final class PluginUtils {
 
     static TypeSymbol rawType(TypeSymbol type) {
         TypeSymbol current = type;
-        if (current instanceof TypeReferenceTypeSymbol typeReference) {
-            current = typeReference.typeDescriptor();
+        while (true) {
+            if (current instanceof TypeReferenceTypeSymbol typeReference) {
+                current = typeReference.typeDescriptor();
+            } else if (current instanceof IntersectionTypeSymbol intersection) {
+                current = intersection.effectiveTypeDescriptor();
+            } else {
+                return current;
+            }
         }
-        if (current instanceof IntersectionTypeSymbol intersection) {
-            current = intersection.effectiveTypeDescriptor();
-        }
-        return current;
     }
 
     static Optional<AnnotationNode> findServiceConfig(SemanticModel semanticModel, List<AnnotationNode> annotations) {
