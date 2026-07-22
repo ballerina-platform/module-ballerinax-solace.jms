@@ -47,7 +47,7 @@ public class CompilerPluginTest {
         Assert.assertEquals(diagnostic.diagnosticInfo().code(), "SOLACE_JMS_101");
         Assert.assertEquals(diagnostic.message(),
                 "service must have the 'solace.jms:ServiceConfig' annotation");
-        Assert.assertEquals(diagnostic.location().lineRange().toString(), "(2:32,4:1)");
+        Assert.assertEquals(diagnostic.location().lineRange().toString(), "(18:32,20:1)");
     }
 
     @Test
@@ -104,8 +104,8 @@ public class CompilerPluginTest {
                 "subscriberName is required when the topic is DURABLE"));
         Assert.assertEquals(diagnostics.stream().map(diagnostic ->
                         diagnostic.location().lineRange().toString()).toList(),
-                List.of("(2:45,2:47)", "(3:51,3:62)", "(4:55,4:57)", "(5:57,5:65)",
-                        "(7:72,7:83)", "(11:20,11:22)", "(16:16,16:27)"));
+                List.of("(18:45,18:47)", "(19:51,19:62)", "(20:55,20:57)", "(21:57,21:65)",
+                        "(23:72,23:83)", "(27:20,27:22)", "(32:16,32:27)"));
     }
 
     @Test
