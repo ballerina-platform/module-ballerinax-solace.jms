@@ -18,23 +18,15 @@
 
 package io.ballerina.lib.solace.jms.listener;
 
-import io.ballerina.lib.solace.jms.CommonUtils;
 import io.ballerina.lib.solace.jms.ModuleUtils;
-import io.ballerina.runtime.api.Runtime;
-import io.ballerina.runtime.api.creators.TypeCreator;
-import io.ballerina.runtime.api.creators.ValueCreator;
-import io.ballerina.runtime.api.types.Parameter;
 import io.ballerina.runtime.api.types.RemoteMethodType;
 import io.ballerina.runtime.api.types.ServiceType;
-import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
-import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
 import io.ballerina.runtime.api.values.BString;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -42,15 +34,9 @@ import static io.ballerina.runtime.api.constants.RuntimeConstants.ORG_NAME_SEPAR
 import static io.ballerina.runtime.api.constants.RuntimeConstants.VERSION_SEPARATOR;
 
 /**
- * This is the native representation of the Ballerina Solace service object.
- * This does the relevant configuration and method validation related to the Solace service. Ideally this validations
- * should be replaced by a compiler plugin.
+ * Native representation of a compiler-validated Ballerina Solace JMS service object.
  */
 public class Service {
-    private static final String IS_SOLACE_MSG_FUNCTION = "isSolaceMessage";
-    private static final Type CALLER_TYPE = ValueCreator.createObjectValue(
-            ModuleUtils.getModule(), "Caller").getOriginalType();
-    private static final Type ERROR_TYPE = TypeCreator.createErrorType("Error", ModuleUtils.getModule());
     private static final BString SERVICE_CONFIG_ANNOTATION = StringUtils.fromString(
             ModuleUtils.getModule().getOrg() + ORG_NAME_SEPARATOR +
                     ModuleUtils.getModule().getName() + VERSION_SEPARATOR +
@@ -67,98 +53,17 @@ public class Service {
 
     Service(BObject consumerService) {
         this.consumerService = consumerService;
-        ServiceType svcType = (ServiceType) TypeUtils.getType(consumerService);
+        ServiceType svcType = (ServiceType) TypeUtils.getImpliedType(TypeUtils.getType(consumerService));
         this.serviceType = svcType;
         BMap<BString, Object> svcConfig = (BMap<BString, Object>) svcType.getAnnotation(SERVICE_CONFIG_ANNOTATION);
         this.serviceConfig = svcConfig.containsKey(QUEUE_NAME) ?
                 new QueueConfig(svcConfig) : new TopicConfig(svcConfig);
         this.onMessage = Stream.of(svcType.getRemoteMethods())
                 .filter(m -> ON_MSG_METHOD.equals(m.getName()))
-                .findFirst().get();
+                .findFirst().orElseThrow();
         this.onError = Stream.of(svcType.getRemoteMethods())
                 .filter(m -> ON_ERR_METHOD.equals(m.getName()))
                 .findFirst();
-    }
-
-    public static void validateService(Runtime runtime, BObject consumerService) throws BError {
-        ServiceType service = (ServiceType) TypeUtils.getType(consumerService);
-        Object svcConfig = service.getAnnotation(SERVICE_CONFIG_ANNOTATION);
-        if (Objects.isNull(svcConfig)) {
-            throw CommonUtils.createError("Service configuration annotation is required.");
-        }
-
-        if (service.getResourceMethods().length > 0) {
-            throw CommonUtils.createError("Solace service cannot have resource methods.");
-        }
-
-        RemoteMethodType[] remoteMethods = service.getRemoteMethods();
-        if (remoteMethods.length < 1 || remoteMethods.length > 2) {
-            throw CommonUtils.createError("Solace service must have exactly one or two remote methods.");
-        }
-
-        for (RemoteMethodType remoteMethod: remoteMethods) {
-            String remoteMethodName = remoteMethod.getName();
-            if (ON_MSG_METHOD.equals(remoteMethodName)) {
-                validateOnMessageMethod(runtime, remoteMethod);
-            } else if (ON_ERR_METHOD.equals(remoteMethodName)) {
-                validateOnErrorMethod(remoteMethod);
-            } else {
-                throw CommonUtils.createError(String.format("Invalid remote method name: %s.", remoteMethodName));
-            }
-        }
-    }
-
-    private static void validateOnMessageMethod(Runtime runtime, RemoteMethodType onMessageMethod) {
-        Parameter[] parameters = onMessageMethod.getParameters();
-        if (parameters.length < 1 || parameters.length > 2) {
-            throw CommonUtils.createError("onMessage method can only have either one or two parameters.");
-        }
-
-        int messageCount = 0;
-        for (Parameter parameter : parameters) {
-            Type parameterType = TypeUtils.getReferredType(parameter.type);
-            if (inSubtypeOfSolaceMessage(runtime, parameterType)) {
-                messageCount++;
-                continue;
-            }
-            if (TypeUtils.isSameType(CALLER_TYPE, parameterType)) {
-                continue;
-            }
-            throw CommonUtils.createError(
-                    "onMessage method parameters must be of type 'solace.jms:Message' " +
-                            "(or its subtype) or 'solace.jms:Caller'.");
-        }
-
-        if (messageCount == 0) {
-            throw CommonUtils.createError("Required parameter 'solace.jms:Message' can not be found.");
-        }
-        if (messageCount > 1) {
-            throw CommonUtils.createError(
-                    "onMessage method must not declare more than one 'solace.jms:Message' parameter.");
-        }
-    }
-
-    private static boolean inSubtypeOfSolaceMessage(Runtime runtime, Type paramType) {
-        try {
-            return (boolean) runtime.callFunction(ModuleUtils.getModule(), IS_SOLACE_MSG_FUNCTION, null,
-                    ValueCreator.createTypedescValue(paramType));
-        } catch (BError bError) {
-            bError.printStackTrace();
-            throw bError;
-        }
-    }
-
-    private static void validateOnErrorMethod(RemoteMethodType onErrorMethod) {
-        if (onErrorMethod.getParameters().length != 1) {
-            throw CommonUtils.createError(
-                    "onError method must have exactly one parameter of type 'solace.jms:Error'.");
-        }
-
-        Parameter parameter = onErrorMethod.getParameters()[0];
-        Type parameterType = TypeUtils.getReferredType(parameter.type);
-        if (!TypeUtils.isSameType(ERROR_TYPE, parameterType)) {
-            throw CommonUtils.createError("onError method parameter must be of type 'solace.jms:Error'.");
-        }
     }
 
     public boolean isOnMessageMethodIsolated() {

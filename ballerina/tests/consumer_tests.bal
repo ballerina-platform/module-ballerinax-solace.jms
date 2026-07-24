@@ -17,6 +17,15 @@
 import ballerina/lang.runtime;
 import ballerina/test;
 
+isolated function dynamicQueueConfiguration(Durability durability, string queueName) returns QueueConfiguration {
+    return {durability, queueName};
+}
+
+isolated function dynamicTopicConfiguration(string topicName, Durability durability,
+                                            string subscriberName) returns TopicConfiguration {
+    return {topicName, durability, subscriberName};
+}
+
 @test:Config {groups: ["consumer"]}
 isolated function testConsumerInitWithQueue() returns error? {
     MessageConsumer consumer = check new (BROKER_URL, {
@@ -640,9 +649,7 @@ isolated function testConsumerValidationDurableQueueMissingName() {
             username: BROKER_USERNAME,
             password: BROKER_PASSWORD
         },
-        subscriptionConfig: {
-            durability: DURABLE
-        }
+        subscriptionConfig: dynamicQueueConfiguration(DURABLE, "")
     });
     test:assertTrue(consumer is Error, "A DURABLE queue with no queueName should fail validation");
     if consumer is Error {
@@ -659,10 +666,7 @@ isolated function testConsumerValidationDurableTopicMissingSubscriberName() {
             username: BROKER_USERNAME,
             password: BROKER_PASSWORD
         },
-        subscriptionConfig: {
-            topicName: TEST_TOPIC,
-            durability: DURABLE
-        }
+        subscriptionConfig: dynamicTopicConfiguration(TEST_TOPIC, DURABLE, "")
     });
     test:assertTrue(consumer is Error, "A DURABLE topic with no subscriberName should fail validation");
     if consumer is Error {
@@ -679,10 +683,7 @@ isolated function testConsumerValidationTemporaryQueueWithName() {
             username: BROKER_USERNAME,
             password: BROKER_PASSWORD
         },
-        subscriptionConfig: {
-            queueName: CONSUMER_INIT_QUEUE,
-            durability: TEMPORARY
-        }
+        subscriptionConfig: dynamicQueueConfiguration(TEMPORARY, CONSUMER_INIT_QUEUE)
     });
     test:assertTrue(consumer is Error, "A TEMPORARY queue with a queueName should fail validation");
     if consumer is Error {

@@ -45,6 +45,7 @@ hs_err_pid*
 build
 target
 generated
+bin
 
 # Environment files
 *.env

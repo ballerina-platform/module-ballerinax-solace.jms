@@ -93,15 +93,15 @@ isolated function validateConsumerConfigurations(ConsumerConfiguration config) r
     if subscriptionConfig is QueueConfiguration {
         string? queueName = subscriptionConfig.queueName;
         if subscriptionConfig.durability != TEMPORARY && (queueName !is string || queueName == "") {
-            return error Error("queueName is required when durability is not TEMPORARY");
+            return error Error("queueName is required when the queue is DURABLE");
         }
         if subscriptionConfig.durability == TEMPORARY && queueName is string && queueName != "" {
-            return error Error("queueName cannot be specified when durability is TEMPORARY");
+            return error Error("queueName cannot be specified when the queue is TEMPORARY");
         }
     } else if subscriptionConfig.durability == DURABLE {
         string? subscriberName = subscriptionConfig.subscriberName;
         if subscriberName !is string || subscriberName == "" {
-            return error Error("subscriberName is required when durability is DURABLE");
+            return error Error("subscriberName is required when the topic is DURABLE");
         }
     }
 }

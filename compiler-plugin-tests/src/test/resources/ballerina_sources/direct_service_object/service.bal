@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (http://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (http://www.wso2.org).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,13 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Checks whether a given type is a subtype of `jms:Message`.
-#
-# + typeDesc - The type needed to be checked as a subtype of `jms:Message`
-# + return - True if the type is a subtype of `jms:Message`, else false
-isolated function isSolaceMessage(typedesc<anydata> typeDesc) returns boolean {
-    if typeDesc is typedesc<Message> {
-        return true;
-    }
-    return false;
+import ballerinax/solace.jms as jms;
+
+function acceptService(jms:Service solaceService) {
+}
+
+function passService() {
+    acceptService(service object {
+        remote function onMessage(jms:Message message) returns error? {}
+    });
 }
