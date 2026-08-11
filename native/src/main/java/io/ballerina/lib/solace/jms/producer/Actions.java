@@ -68,6 +68,7 @@ public final class Actions {
             // Configure transport mode from connection configuration
             connectionFactory.setDirectTransport(connConfig.directTransport());
             connectionFactory.setDirectOptimized(connConfig.directOptimized());
+            CommonUtils.applyConnectionFactorySettings(connectionFactory, connConfig);
 
             connection = connectionFactory.createConnection();
             connection.start();

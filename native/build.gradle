@@ -41,6 +41,8 @@ dependencies {
         exclude group: 'org.apache.geronimo.specs', module: 'geronimo-jms_2.0_spec'
     }
     implementation group: 'javax.jms', name: 'javax.jms-api', version: "${jmsApiVersion}"
+
+    testImplementation group: 'org.testng', name: 'testng', version: "${testngVersion}"
 }
 
 tasks.withType(JavaCompile) {
@@ -48,6 +50,9 @@ tasks.withType(JavaCompile) {
 }
 
 test {
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
     testLogging {
         showStackTraces = true
         showStandardStreams = true
@@ -93,6 +98,7 @@ checkstyle {
 }
 
 checkstyleMain.dependsOn ':checkstyle:downloadCheckstyleRuleFiles'
+checkstyleTest.dependsOn ':checkstyle:downloadCheckstyleRuleFiles'
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE

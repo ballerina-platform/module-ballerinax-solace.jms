@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Solace JMS native test suite">
+    <test name="Solace JMS native tests">
+        <classes>
+            <class name="io.ballerina.lib.solace.jms.CommonUtilsConnectionSettingsTest"/>
+        </classes>
+    </test>
+</suite>

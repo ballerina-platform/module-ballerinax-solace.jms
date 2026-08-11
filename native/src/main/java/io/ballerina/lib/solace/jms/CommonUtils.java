@@ -52,7 +52,7 @@ public final class CommonUtils {
     private CommonUtils() {}
 
     /**
-     * Builds Solace JNDI connection properties from connection configuration.
+     * Builds Solace connection factory properties from connection configuration.
      *
      * @param url    Solace broker URL
      * @param config Connection configuration
@@ -63,30 +63,10 @@ public final class CommonUtils {
         props.put(Context.PROVIDER_URL, url);
         props.put(SupportedProperty.SOLACE_JMS_VPN, config.messageVpn());
         props.put(SupportedProperty.SOLACE_JMS_DYNAMIC_DURABLES, config.enableDynamicDurables());
-
-        if (config.clientName() != null) {
-            props.put(SupportedProperty.SOLACE_JMS_JNDI_CLIENT_ID, config.clientName());
-        }
-        if (config.clientDescription() != null && !config.clientDescription().isEmpty()) {
-            props.put(SupportedProperty.SOLACE_JMS_JNDI_CLIENT_DESCRIPTION, config.clientDescription());
-        }
-
-        props.put(SupportedProperty.SOLACE_JMS_JNDI_CONNECT_TIMEOUT, Math.toIntExact(config.connectTimeout()));
-        props.put(SupportedProperty.SOLACE_JMS_JNDI_READ_TIMEOUT, Math.toIntExact(config.readTimeout()));
         props.put(SupportedProperty.SOLACE_JMS_COMPRESSION_LEVEL, config.compressionLevel());
 
         if (config.localhost() != null) {
             props.put(SupportedProperty.SOLACE_JMS_LOCALHOST, config.localhost());
-        }
-
-        if (config.retryConfig() != null) {
-            RetryConfig retryConfig = config.retryConfig();
-            props.put(SupportedProperty.SOLACE_JMS_JNDI_CONNECT_RETRIES, retryConfig.connectRetries());
-            props.put(SupportedProperty.SOLACE_JMS_JNDI_CONNECT_RETRIES_PER_HOST,
-                    retryConfig.connectRetriesPerHost());
-            props.put(SupportedProperty.SOLACE_JMS_JNDI_RECONNECT_RETRIES, retryConfig.reconnectRetries());
-            props.put(SupportedProperty.SOLACE_JMS_JNDI_RECONNECT_RETRY_WAIT,
-                    Math.toIntExact(retryConfig.reconnectRetryWait()));
         }
 
         // Authentication priority: explicit auth config > client certificate (keyStore) > basic auth (default)
@@ -180,6 +160,35 @@ public final class CommonUtils {
         }
 
         return props;
+    }
+
+    /**
+     * Applies client identity, timeout, and retry settings directly to the given connection factory.
+     * These settings have no effect when written to the connection properties Hashtable - the corresponding
+     * {@code Solace_JMS_JNDI_*} keys are only consulted by a JNDI {@code InitialContext} lookup, which this
+     * connector never performs. {@link SolConnectionFactory} exposes the same settings as direct setters,
+     * which are what actually reach the broker connection.
+     *
+     * @param factory the connection factory to configure
+     * @param config  connection configuration containing the settings
+     */
+    public static void applyConnectionFactorySettings(SolConnectionFactory factory, ConnectionConfiguration config) {
+        if (config.clientName() != null) {
+            factory.setClientID(config.clientName());
+        }
+        if (config.clientDescription() != null && !config.clientDescription().isEmpty()) {
+            factory.setClientDescription(config.clientDescription());
+        }
+        factory.setConnectTimeoutInMillis(Math.toIntExact(config.connectTimeout()));
+        factory.setReadTimeoutInMillis(Math.toIntExact(config.readTimeout()));
+
+        if (config.retryConfig() != null) {
+            RetryConfig retryConfig = config.retryConfig();
+            factory.setConnectRetries(retryConfig.connectRetries());
+            factory.setConnectRetriesPerHost(retryConfig.connectRetriesPerHost());
+            factory.setReconnectRetries(retryConfig.reconnectRetries());
+            factory.setReconnectRetryWaitInMillis(Math.toIntExact(retryConfig.reconnectRetryWait()));
+        }
     }
 
     /**
