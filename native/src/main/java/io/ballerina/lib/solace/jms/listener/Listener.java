@@ -28,10 +28,11 @@ import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
 import io.ballerina.runtime.api.values.BString;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Hashtable;
-import java.util.List;
+import java.util.IdentityHashMap;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.Connection;
@@ -68,7 +69,9 @@ public class Listener {
             CommonUtils.applyFlowControlSettings(connectionFactory, connConfig);
             Connection connection = connectionFactory.createConnection();
             bListener.addNativeData(NATIVE_CONNECTION, connection);
-            bListener.addNativeData(NATIVE_SERVICE_LIST, new ArrayList<BObject>());
+            // Identity-based: membership must mean "the exact same service object", not "an object that
+            // happens to be equal" - see attach()'s duplicate-attach guard.
+            bListener.addNativeData(NATIVE_SERVICE_LIST, Collections.newSetFromMap(new IdentityHashMap<>()));
             bListener.addNativeData(NATIVE_DIRECT_TRANSPORT, connConfig.directTransport());
         } catch (Exception e) {
             return CommonUtils.createError(String.format("Failed to initialize listener: %s", e.getMessage()), e);
@@ -79,7 +82,11 @@ public class Listener {
     public static Object attach(Environment env, BObject bListener, BObject bService, Object name) {
         Connection connection = (Connection) bListener.getNativeData(NATIVE_CONNECTION);
         Object started = bListener.getNativeData(LISTENER_STARTED);
+        Set<BObject> serviceList = (Set<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
         try {
+            if (serviceList.contains(bService)) {
+                return CommonUtils.createError("Service is already attached to this listener");
+            }
             Service nativeService = new Service(bService);
             ServiceConfig svcConfig = nativeService.getServiceConfig();
             int jmsAckMode = getJmsAckMode(svcConfig.ackMode());
@@ -97,7 +104,6 @@ public class Listener {
             MessageReceiver receiver = new MessageReceiver(session, consumer, messageDispatcher);
             bService.addNativeData(NATIVE_SERVICE, nativeService);
             bService.addNativeData(NATIVE_RECEIVER, receiver);
-            List<BObject> serviceList = (List<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
             serviceList.add(bService);
             if (Objects.nonNull(started)) {
                 AtomicBoolean listenerStarted = (AtomicBoolean) started;
@@ -121,13 +127,15 @@ public class Listener {
         };
     }
 
-    public static Object detach(BObject bService) {
+    public static Object detach(BObject bListener, BObject bService) {
         Object receiver = bService.getNativeData(NATIVE_RECEIVER);
         try {
             if (Objects.isNull(receiver)) {
                 return CommonUtils.createError("Could not find the native Solace message receiver");
             }
             ((MessageReceiver) receiver).stop();
+            Set<BObject> serviceList = (Set<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
+            serviceList.remove(bService);
         } catch (Exception e) {
             String errorMsg = Objects.isNull(e.getMessage()) ? "Unknown error" : e.getMessage();
             return CommonUtils.createError(
@@ -138,7 +146,7 @@ public class Listener {
 
     public static Object start(BObject bListener) {
         Connection connection = (Connection) bListener.getNativeData(NATIVE_CONNECTION);
-        List<BObject> bServices = (List<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
+        Set<BObject> bServices = (Set<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
         try {
             connection.start();
             for (BObject bService: bServices) {
@@ -157,7 +165,7 @@ public class Listener {
 
     public static Object gracefulStop(BObject bListener) {
         Connection nativeConnection = (Connection) bListener.getNativeData(NATIVE_CONNECTION);
-        List<BObject> bServices = (List<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
+        Set<BObject> bServices = (Set<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
         try {
             for (BObject bService: bServices) {
                 MessageReceiver receiver = (MessageReceiver) bService.getNativeData(NATIVE_RECEIVER);
@@ -176,7 +184,7 @@ public class Listener {
 
     public static Object immediateStop(BObject bListener) {
         Connection nativeConnection = (Connection) bListener.getNativeData(NATIVE_CONNECTION);
-        List<BObject> bServices = (List<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
+        Set<BObject> bServices = (Set<BObject>) bListener.getNativeData(NATIVE_SERVICE_LIST);
         try {
             for (BObject bService: bServices) {
                 MessageReceiver receiver = (MessageReceiver) bService.getNativeData(NATIVE_RECEIVER);

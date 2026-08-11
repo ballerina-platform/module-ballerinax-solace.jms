@@ -91,3 +91,9 @@ const string PRODUCER_OVERRIDE_TARGET_QUEUE = "producer-override-target-queue";
 const string PRODUCER_OVERRIDE_TARGET_TOPIC = "test/producer/override-target-topic";
 const string PRODUCER_FANOUT_QUEUE_A = "producer-fanout-queue-a";
 const string PRODUCER_FANOUT_QUEUE_B = "producer-fanout-queue-b";
+
+// Listener duplicate-attach tests
+const string DUPLICATE_ATTACH_QUEUE = "duplicate-attach-queue";
+const string DUPLICATE_ATTACH_SVC1_QUEUE = "duplicate-attach-svc1-queue";
+const string DUPLICATE_ATTACH_SVC2_QUEUE = "duplicate-attach-svc2-queue";
+const string DUPLICATE_ATTACH_REATTACH_QUEUE = "duplicate-attach-reattach-queue";
