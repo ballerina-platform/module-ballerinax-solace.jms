@@ -2,7 +2,7 @@
 distribution = "2201.12.0"
 org = "ballerinax"
 name = "solace.jms"
-version = "0.1.0"
+version = "1.0.0"
 license= ["Apache-2.0"]
 authors = ["Ballerina"]
 keywords = ["solace", "messaging", "network", "pubsub", "jms", "Vendor/Solace", "Area/Messaging", "Type/Connector", "Type/Trigger"]
@@ -15,8 +15,8 @@ graalvmCompatible = true
 [[platform.java21.dependency]]
 groupId = "io.ballerina.lib"
 artifactId = "solace.jms-native"
-version = "0.1.0-SNAPSHOT"
-path = "../native/build/libs/solace.jms-native-0.1.0-SNAPSHOT.jar"
+version = "1.0.0-SNAPSHOT"
+path = "../native/build/libs/solace.jms-native-1.0.0-SNAPSHOT.jar"
 
 [[platform.java21.dependency]]
 groupId = "javax.jms"

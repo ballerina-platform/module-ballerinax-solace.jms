@@ -26,10 +26,7 @@ public isolated client class MessageConsumer {
     # });
     # ```
     #
-    # + url - The Solace broker URL in the format `<scheme>://[username]:[password]@<host>[:port]`.
-    # Supported schemes are `smf` (plain-text) and `smfs` (TLS/SSL).
-    # Multiple hosts can be specified as a comma-separated list for failover support.
-    # Default ports: 55555 (standard), 55003 (compression), 55443 (SSL)
+    # + url - The broker URL with format: [protocol:]host[:port]
     # + config - Consumer configuration including connection settings and subscription details
     # + return - A `jms:Error` if initialization fails or else `()`
     public isolated function init(string url, *ConsumerConfiguration config) returns Error? {

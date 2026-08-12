@@ -31,10 +31,7 @@ public isolated class Listener {
     # );
     # ```
     #
-    # + url - The Solace broker URL in the format `<scheme>://[username]:[password]@<host>[:port]`.
-    # Supported schemes are `smf` (plain-text) and `smfs` (TLS/SSL).
-    # Multiple hosts can be specified as a comma-separated list for failover support.
-    # Default ports: 55555 (standard), 55003 (compression), 55443 (SSL)
+    # + url - The broker URL with format: [protocol:]host[:port]
     # + config - configurations used when initializing the listener
     # + return - `jms:Error` if an error occurs or `()` otherwise
     public isolated function init(string url, *ListenerConfiguration config) returns Error? {
