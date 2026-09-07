@@ -383,8 +383,8 @@
         },
         "url": {
           "key": "url",
-          "placeholder": "smf://localhost:55555",
-          "default": "\"smf://localhost:55555\"",
+          "placeholder": "smfs://localhost:55443",
+          "default": "\"smfs://localhost:55443\"",
           "validations": [
             {
               "rule": "common.validate.required"
