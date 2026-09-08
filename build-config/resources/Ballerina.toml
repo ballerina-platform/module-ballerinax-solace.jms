@@ -8,6 +8,7 @@ authors = ["Ballerina"]
 keywords = ["solace", "messaging", "network", "pubsub", "jms", "Vendor/Solace", "Area/Messaging", "Type/Connector", "Type/Trigger"]
 icon = "icon.png"
 repository = "https://github.com/ballerina-platform/module-ballerinax-solace.jms"
+include = ["metadata/**"]
 
 [platform.java21]
 graalvmCompatible = true
