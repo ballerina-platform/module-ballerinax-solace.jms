@@ -919,6 +919,7 @@
                           "template": "{{type}}",
                           "modifiers": {
                             "field": "payload",
+                            "typeIdentifier": "SolaceJMSMessage",
                             "template": "{{type}}"
                           }
                         },
