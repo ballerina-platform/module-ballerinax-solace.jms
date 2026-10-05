@@ -61,7 +61,7 @@ test {
     }
     jacoco {
         enabled = true
-        destinationFile = file("$buildDir/coverage-reports/jacoco.exec")
+        destinationFile = layout.buildDirectory.file("coverage-reports/jacoco.exec").get().asFile
     }
 }
 
@@ -71,7 +71,7 @@ spotbugsMain {
     def SpotBugsEffort = classLoader.findLoadedClass("com.github.spotbugs.snom.Effort")
     effort = SpotBugsEffort.MAX
     reportLevel = SpotBugsConfidence.LOW
-    reportsDir = file("$project.buildDir/reports/spotbugs")
+    reportsDir = layout.buildDirectory.dir("reports/spotbugs").get().asFile
     def excludeFile = file("spotbugs-exclude.xml")
     if (excludeFile.exists()) {
         it.excludeFilter = excludeFile

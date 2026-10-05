@@ -17,10 +17,18 @@
  */
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
+
+abstract class BallerinaExecHelper {
+    @Inject abstract ExecOperations getExecOperations()
+}
 
 plugins {
     id 'io.ballerina.plugin'
 }
+
+def execHelper = project.objects.newInstance(BallerinaExecHelper)
 
 description = 'Ballerina - Solace JMS Connector'
 
@@ -149,7 +157,7 @@ task updateTomlFiles {
 
 task commitTomlFiles {
     doLast {
-        project.exec {
+        execHelper.execOperations.exec {
             ignoreExitValue true
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                 commandLine 'cmd', '/c', "git commit -m \"[Automated] Update the toml files\" Ballerina.toml CompilerPlugin.toml Dependencies.toml"
@@ -183,12 +191,12 @@ task startSolaceServer() {
         if (!Os.isFamily(Os.FAMILY_WINDOWS)) {
             def dockerComposeFile = "${project.projectDir}/tests/resources/docker-compose.yaml"
             def initScript = "${project.projectDir}/tests/resources/init-solace.sh"
-            exec {
+            execHelper.execOperations.exec {
                 commandLine 'sh', '-c', "docker compose -f $dockerComposeFile up -d"
             }
             sleep(20 * 1000)
             // Initialize queues
-            exec {
+            execHelper.execOperations.exec {
                 commandLine 'sh', '-c', "chmod +x $initScript && $initScript"
                 ignoreExitValue false
             }
@@ -200,7 +208,7 @@ task stopSolaceServer() {
     doLast {
         if (!Os.isFamily(Os.FAMILY_WINDOWS)) {
             def dockerComposeFile = "${project.projectDir}/tests/resources/docker-compose.yaml"
-            exec {
+            execHelper.execOperations.exec {
                 commandLine 'sh', '-c', "docker compose -f $dockerComposeFile rm -svf"
             }
             sleep(5 * 1000)
