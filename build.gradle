@@ -20,7 +20,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
     id "com.github.spotbugs-base"
-    id "com.github.johnrengelman.shadow"
+    id "com.gradleup.shadow"
     id "de.undercouch.download"
     id "net.researchgate.release"
 }
@@ -95,7 +95,7 @@ subprojects {
     }
 }
 
-task build {
+tasks.named('build') {
     dependsOn(":solace.jms-native:build")
     dependsOn(":solace.jms-compiler-plugin:build")
     dependsOn(":solace.jms-ballerina:build")
