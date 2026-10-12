@@ -59,7 +59,7 @@ ballerina {
     module = packageName
     langVersion = ballerinaLangVersion
     testCoverageParam = "--code-coverage --coverage-format=xml"
-    platform = "java21"
+    platform = "java25"
 }
 
 configurations {
@@ -97,7 +97,10 @@ dependencies {
     externalJars(group: 'io.netty', name: 'netty-handler', version: "${nettyVersion}") {
         transitive = false
     }
-    externalJars(group: 'io.netty', name: 'netty-codec', version: "${nettyVersion}") {
+    externalJars(group: 'io.netty', name: 'netty-codec-base', version: "${nettyVersion}") {
+        transitive = false
+    }
+    externalJars(group: 'io.netty', name: 'netty-codec-compression', version: "${nettyVersion}") {
         transitive = false
     }
     externalJars(group: 'io.netty', name: 'netty-codec-http', version: "${nettyVersion}") {

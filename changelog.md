@@ -15,3 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for basic, Kerberos, and OAuth2 authentication, and TLS secured connections
 - Support for setting a per-message time-to-live via `Message.timeToLive`
 - Support for configuring guaranteed-delivery flow control via `transportWindowSize`, `ackThreshold`, and `ackTimer`
+
+### Changed
+- Updated the Solace JMS API (`sol-jms`) to 10.30.2 and Netty to 4.2.18.Final, replacing the `netty-codec` artifact with `netty-codec-base` and adding `netty-codec-compression` ([#9152](https://github.com/ballerina-platform/ballerina-library/issues/9152))
+- Updated the minimum required Ballerina distribution to 2201.14.0 (Swan Lake Update 14) with Java 25 support
