@@ -113,6 +113,12 @@ path = "./lib/netty-handler-proxy-@netty.version@.jar"
 
 [[platform.java25.dependency]]
 groupId = "io.netty"
+artifactId = "netty-codec-socks"
+version = "@netty.version@"
+path = "./lib/netty-codec-socks-@netty.version@.jar"
+
+[[platform.java25.dependency]]
+groupId = "io.netty"
 artifactId = "netty-transport-native-epoll"
 version = "@netty.version@"
 path = "./lib/netty-transport-native-epoll-@netty.version@.jar"
